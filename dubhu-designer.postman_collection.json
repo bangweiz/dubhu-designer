@@ -1,0 +1,305 @@
+{
+	"info": {
+		"_postman_id": "e9c8951a-2fd0-4eeb-89e4-bdfc96c6702f",
+		"name": "Dubhu Designer",
+		"description": "Postman collection for Dubhu Designer API, covering Tool and Instruction management endpoints. Instructions reference tools using the `{{tool:tool_id}}` syntax.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Tools",
+			"description": "Endpoints for creating, listing, retrieving, and updating tool specifications.",
+			"item": [
+				{
+					"name": "Create Tool",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set(\"toolId\", jsonData.data.id);",
+									"        console.log(\"Saved toolId:\", jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"http_request\",\n  \"description\": \"Performs HTTP requests to external APIs\",\n  \"inputs\": [\n    {\n      \"name\": \"url\",\n      \"type\": \"string\",\n      \"description\": \"Destination endpoint URL\",\n      \"required\": true\n    },\n    {\n      \"name\": \"method\",\n      \"type\": \"string\",\n      \"description\": \"HTTP method (e.g. GET, POST)\",\n      \"required\": false\n    }\n  ],\n  \"outputs\": [\n    {\n      \"name\": \"status_code\",\n      \"type\": \"number\",\n      \"description\": \"HTTP response status code\"\n    },\n    {\n      \"name\": \"response_body\",\n      \"type\": \"string\",\n      \"description\": \"Raw response payload\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tools",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tools"
+							]
+						},
+						"description": "Creates a new tool specification with initial version 1. Automatically saves the created tool's ID to the collection variable `toolId` upon success."
+					},
+					"response": []
+				},
+				{
+					"name": "List Tools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tools",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tools"
+							]
+						},
+						"description": "Retrieves all tools registered in the system."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tool by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tools/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tools",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{toolId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the tool"
+								}
+							]
+						},
+						"description": "Retrieves a specific tool specification by its hexadecimal MongoDB ObjectID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tool",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"http_request_v2\",\n  \"description\": \"Performs optimized HTTP requests to external APIs\",\n  \"version\": 1,\n  \"inputs\": [\n    {\n      \"name\": \"url\",\n      \"type\": \"string\",\n      \"description\": \"Destination endpoint URL\",\n      \"required\": true\n    }\n  ],\n  \"outputs\": [\n    {\n      \"name\": \"status_code\",\n      \"type\": \"number\",\n      \"description\": \"HTTP response status code\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tools/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tools",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{toolId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the tool"
+								}
+							]
+						},
+						"description": "Updates an existing tool specification using optimistic concurrency control. Requires the current version number in the payload. Increments version on success."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Instructions",
+			"description": "Endpoints for creating, listing, retrieving, and updating instruction specifications. Content references tools via {{tool:tool_id}} chips.",
+			"item": [
+				{
+					"name": "Create Instruction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set(\"instructionId\", jsonData.data.id);",
+									"        console.log(\"Saved instructionId:\", jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"search_and_summarize\",\n  \"content\": \"Search the web using {{tool:{{toolId}}}} and synthesize the findings.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/instructions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"instructions"
+							]
+						},
+						"description": "Creates a new instruction. Referenced tools are extracted from {{tool:tool_id}} chips, checked for existence, and linked to the instruction. Saves the created instruction's ID to `instructionId` on success."
+					},
+					"response": []
+				},
+				{
+					"name": "List Instructions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/instructions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"instructions"
+							]
+						},
+						"description": "Retrieves summaries of all instructions in the system without embedding full tool specifications."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Instruction by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/instructions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"instructions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{instructionId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								}
+							]
+						},
+						"description": "Retrieves an instruction by its ID, fully resolving and populating all referenced tools."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Instruction",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"search_and_summarize_v2\",\n  \"content\": \"Search the web using {{tool:{{toolId}}}} and format output as markdown.\",\n  \"version\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/instructions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"instructions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{instructionId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								}
+							]
+						},
+						"description": "Updates an existing instruction using optimistic concurrency control. Validates referenced tool IDs and increments version on success."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "toolId",
+			"value": "651da3b57f8641a27e36c579",
+			"type": "string"
+		},
+		{
+			"key": "instructionId",
+			"value": "651da3b57f8641a27e36c580",
+			"type": "string"
+		}
+	]
+}

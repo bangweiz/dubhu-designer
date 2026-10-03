@@ -18,14 +18,26 @@ func main() {
 		panic(fmt.Sprintf("Failed to connect to database: %v", err))
 	}
 
-	// Dependency Injection using concrete structs: Repository -> Service -> Controller
+	ctx := context.Background()
+
+	// Dependency Injection: Repositories
 	toolRepo := repository.NewToolRepository(database)
-	if err := toolRepo.InitIndexes(context.Background()); err != nil {
+	if err := toolRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize tool indexes: %v", err))
 	}
 
+	instructionRepo := repository.NewInstructionRepository(database)
+	if err := instructionRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize instruction indexes: %v", err))
+	}
+
+	// Dependency Injection: Services
 	toolService := service.NewToolService(toolRepo)
+	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
+
+	// Dependency Injection: Controllers
 	toolController := controller.NewToolController(toolService)
+	instructionController := controller.NewInstructionController(instructionService)
 
 	// Setup Gin router
 	router := gin.Default()
@@ -33,6 +45,7 @@ func main() {
 	// API versioning group
 	apiV1 := router.Group("/api/v1")
 	toolController.RegisterRoutes(apiV1)
+	instructionController.RegisterRoutes(apiV1)
 
 	log.Println("Server running on :8080")
 	if err := router.Run(":8080"); err != nil {
