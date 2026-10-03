@@ -233,6 +233,211 @@ paths:
                     type: string
                     example: "failed to update tool"
 
+  /instructions:
+    post:
+      summary: Create a new instruction
+      description: Creates a new LLM instruction. The content can reference tools using the syntax {{tool:tool_id}}. The service parses these references, verifies that all referenced tools exist in the database, and populates the instruction's tools field with their ObjectIDs. If any referenced tool does not exist, the request is rejected with a 400 Bad Request.
+      operationId: createInstruction
+      tags:
+        - Instructions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstructionRequest'
+            example:
+              name: "search_and_summarize"
+              content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+      responses:
+        '201':
+          description: Instruction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Instruction'
+        '400':
+          description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "referenced tools do not exist: 651da3b57f8641a27e36c579"
+        '409':
+          description: Conflict (instruction name already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                details:
+                  - field: "name"
+                    reason: "instruction name already exists"
+                    value: "search_and_summarize"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to insert instruction"
+    get:
+      summary: List all instructions
+      description: Retrieves all registered instructions without sorting, filtering, or pagination.
+      operationId: listInstructions
+      tags:
+        - Instructions
+      responses:
+        '200':
+          description: List of instructions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InstructionSummary'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to query instructions"
+
+  /instructions/{id}:
+    get:
+      summary: Get instruction by ID
+      description: Retrieves a specific instruction by its MongoDB ObjectID.
+      operationId: getInstructionById
+      tags:
+        - Instructions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      responses:
+        '200':
+          description: Instruction retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Instruction'
+        '404':
+          description: Instruction not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Instruction not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to find instruction"
+    put:
+      summary: Update instruction by ID
+      description: Updates an existing instruction using optimistic concurrency control. All fields can be updated. Any tool references in content are resolved, and the request is rejected with 400 Bad Request if referenced tools do not exist. The current version number is required in the request body. On success, the version number is incremented.
+      operationId: updateInstruction
+      tags:
+        - Instructions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstructionRequest'
+            example:
+              name: "search_and_summarize_v2"
+              content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
+              version: 1
+      responses:
+        '200':
+          description: Instruction updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Instruction'
+        '400':
+          description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "referenced tools do not exist: 651da3b57f8641a27e36c579"
+        '404':
+          description: Instruction not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Instruction not found"
+        '409':
+          description: Conflict (version mismatch / concurrency conflict or duplicate name)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                details:
+                  - field: "version"
+                    reason: "instruction was modified by another operation (version mismatch)"
+                    value: 1
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to update instruction"
+
 components:
   schemas:
     ToolInput:
@@ -372,6 +577,118 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ToolOutput'
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-10-03T03:50:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-10-03T03:50:00Z"
+
+    CreateInstructionRequest:
+      type: object
+      required:
+        - name
+        - content
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Unique instruction name
+          example: "search_and_summarize"
+        content:
+          type: string
+          maxLength: 100000
+          description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+          example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+
+    UpdateInstructionRequest:
+      type: object
+      required:
+        - name
+        - content
+        - version
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Unique instruction name
+          example: "search_and_summarize_v2"
+        content:
+          type: string
+          maxLength: 100000
+          description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+          example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
+        version:
+          type: integer
+          minimum: 1
+          description: Current version of the instruction required for optimistic locking
+          example: 1
+
+    InstructionSummary:
+      type: object
+      required:
+        - id
+        - name
+        - content
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          example: "651da3b57f8641a27e36c579"
+        name:
+          type: string
+          example: "search_and_summarize"
+        content:
+          type: string
+          example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+        version:
+          type: integer
+          minimum: 1
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-10-03T03:50:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-10-03T03:50:00Z"
+
+    Instruction:
+      type: object
+      required:
+        - id
+        - name
+        - content
+        - tools
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          example: "651da3b57f8641a27e36c579"
+        name:
+          type: string
+          example: "search_and_summarize"
+        content:
+          type: string
+          example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+        tools:
+          type: array
+          description: List of resolved tools referenced by this instruction
+          items:
+            $ref: '#/components/schemas/Tool'
+        version:
+          type: integer
+          minimum: 1
+          example: 1
         created_at:
           type: string
           format: date-time

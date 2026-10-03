@@ -14,8 +14,8 @@ import (
 const collectionTools = "tools"
 
 var (
-	ErrToolNameExists   = errors.New("tool name already exists")
-	ErrVersionConflict  = errors.New("version conflict")
+	ErrToolNameExists  = errors.New("tool name already exists")
+	ErrVersionConflict = errors.New("version conflict")
 )
 
 // ToolRepository manages Tool persistence in MongoDB.
@@ -115,4 +115,31 @@ func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedV
 	}
 
 	return &updatedTool, nil
+}
+
+// FindByIDs finds all tools matching any of the given ObjectIDs.
+func (r *ToolRepository) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]models.Tool, error) {
+	if len(ids) == 0 {
+		return []models.Tool{}, nil
+	}
+
+	filter := bson.M{
+		"_id": bson.M{"$in": ids},
+	}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tools by IDs: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var tools []models.Tool
+	if err := cursor.All(ctx, &tools); err != nil {
+		return nil, fmt.Errorf("failed to decode tools: %w", err)
+	}
+
+	if tools == nil {
+		tools = []models.Tool{}
+	}
+	return tools, nil
 }

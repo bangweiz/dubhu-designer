@@ -9,6 +9,7 @@ import (
 const (
 	maxNameLength        = 200
 	maxDescriptionLength = 2000
+	maxContentLength     = 100000 // reasonable upper bound for LLM instructions
 )
 
 // FieldError represents a single field validation failure.
@@ -61,6 +62,25 @@ func validateDescription(field, value string) *FieldError {
 		return &FieldError{
 			Field:  field,
 			Reason: fmt.Sprintf("%s cannot exceed %d characters", field, maxDescriptionLength),
+			Value:  value,
+		}
+	}
+	return nil
+}
+
+// validateContent validates that pre-trimmed content is non-empty.
+func validateContent(field, value string) *FieldError {
+	if value == "" {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s is required and cannot be blank", field),
+			Value:  value,
+		}
+	}
+	if utf8.RuneCountInString(value) > maxContentLength {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s cannot exceed %d characters", field, maxContentLength),
 			Value:  value,
 		}
 	}
