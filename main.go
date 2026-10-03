@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/bangweiz/dubhu-designer/internal/db"
+)
 
 func main() {
-	fmt.Println("Hello, Dubhu!")
+	db.ConnectDB()
 }
