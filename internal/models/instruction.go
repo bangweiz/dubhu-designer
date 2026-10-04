@@ -13,6 +13,12 @@ type Instruction struct {
 	Content   string          `bson:"content" json:"content"`
 	Tools     []bson.ObjectID `bson:"tools" json:"tools"`
 	Version   int             `bson:"version" json:"version"`
-	CreatedAt time.Time       `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time       `bson:"updated_at" json:"updated_at"`
+	CreatedAt time.Time       `bson:"created_at" json:"createdAt"`
+	UpdatedAt time.Time       `bson:"updated_at" json:"updatedAt"`
+}
+
+// PopulatedInstruction represents an Instruction with its referenced Tool documents resolved via aggregation.
+type PopulatedInstruction struct {
+	Instruction   `bson:",inline"`
+	ResolvedTools []Tool `bson:"resolved_tools"`
 }

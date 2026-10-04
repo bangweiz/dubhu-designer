@@ -73,3 +73,9 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto
 		UpdatedAt: inst.UpdatedAt,
 	}
 }
+
+// ToPopulatedInstructionResponseDTO converts a domain PopulatedInstruction model to InstructionResponseDTO,
+// ensuring Tools is ordered by the instruction's Tools slice.
+func ToPopulatedInstructionResponseDTO(populated *models.PopulatedInstruction) dto.InstructionResponseDTO {
+	return ToInstructionResponseDTO(&populated.Instruction, populated.ResolvedTools)
+}

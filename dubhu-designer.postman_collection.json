@@ -83,17 +83,17 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/tools/:id",
+							"raw": "{{baseUrl}}/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"tools",
-								":id"
+								":toolId"
 							],
 							"variable": [
 								{
-									"key": "id",
+									"key": "toolId",
 									"value": "{{toolId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the tool"
 								}
@@ -123,17 +123,17 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/tools/:id",
+							"raw": "{{baseUrl}}/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"tools",
-								":id"
+								":toolId"
 							],
 							"variable": [
 								{
-									"key": "id",
+									"key": "toolId",
 									"value": "{{toolId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the tool"
 								}
@@ -222,17 +222,17 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/instructions/:id",
+							"raw": "{{baseUrl}}/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"instructions",
-								":id"
+								":instructionId"
 							],
 							"variable": [
 								{
-									"key": "id",
+									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
 								}
@@ -262,23 +262,246 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/instructions/:id",
+							"raw": "{{baseUrl}}/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"instructions",
-								":id"
+								":instructionId"
 							],
 							"variable": [
 								{
-									"key": "id",
+									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
 								}
 							]
 						},
 						"description": "Updates an existing instruction using optimistic concurrency control. Validates referenced tool IDs and increments version on success."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Concierges",
+			"description": "Endpoints for creating, listing, and retrieving concierge specifications.",
+			"item": [
+				{
+					"name": "Create Concierge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set(\"conciergeId\", jsonData.data.id);",
+									"        console.log(\"Saved conciergeId:\", jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"front_desk_assistant\",\n  \"description\": \"Handles incoming customer requests and routes inquiries.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/concierges",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges"
+							]
+						},
+						"description": "Creates a new concierge specification with initial version 1. Requires name and description. Saves the created concierge's ID to `conciergeId` on success."
+					},
+					"response": []
+				},
+				{
+					"name": "List Concierges",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges"
+							]
+						},
+						"description": "Retrieves all concierges registered in the system."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Concierge by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the concierge"
+								}
+							]
+						},
+						"description": "Retrieves a specific concierge specification by its hexadecimal MongoDB ObjectID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Agents",
+			"description": "Endpoints for creating, listing, and retrieving agent specifications.",
+			"item": [
+				{
+					"name": "Create Agent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set(\"agentId\", jsonData.data.id);",
+									"        console.log(\"Saved agentId:\", jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"research_assistant\",\n  \"description\": \"Conducts deep literature research and analysis.\",\n  \"model\": \"gemini-3.5-flash\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								}
+							]
+						},
+						"description": "Creates a new agent specification scoped to the specified concierge with initial version 1. Requires name, description, and model. Saves the created agent's ID to `agentId` on success."
+					},
+					"response": []
+				},
+				{
+					"name": "List Agents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								}
+							]
+						},
+						"description": "Retrieves all agents registered under the specified concierge."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Agent by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents",
+								":agentId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								}
+							]
+						},
+						"description": "Retrieves a specific agent specification by its hexadecimal MongoDB ObjectID under the specified concierge."
 					},
 					"response": []
 				}
@@ -299,6 +522,16 @@
 		{
 			"key": "instructionId",
 			"value": "651da3b57f8641a27e36c580",
+			"type": "string"
+		},
+		{
+			"key": "conciergeId",
+			"value": "651da3b57f8641a27e36c581",
+			"type": "string"
+		},
+		{
+			"key": "agentId",
+			"value": "651da3b57f8641a27e36c582",
 			"type": "string"
 		}
 	]

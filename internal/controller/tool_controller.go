@@ -29,8 +29,8 @@ func (c *ToolController) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		tools.POST("", c.CreateTool)
 		tools.GET("", c.ListTools)
-		tools.GET("/:id", c.GetToolByID)
-		tools.PUT("/:id", c.UpdateTool)
+		tools.GET("/:toolId", c.GetToolByID)
+		tools.PUT("/:toolId", c.UpdateTool)
 	}
 }
 
@@ -96,9 +96,9 @@ func (c *ToolController) ListTools(ctx *gin.Context) {
 	})
 }
 
-// GetToolByID handles GET /api/v1/tools/:id
+// GetToolByID handles GET /api/v1/tools/:toolId
 func (c *ToolController) GetToolByID(ctx *gin.Context) {
-	id := ctx.Param("id")
+	id := ctx.Param("toolId")
 
 	toolResponse, err := c.toolService.GetToolByID(ctx.Request.Context(), id)
 	if err != nil {
@@ -119,9 +119,9 @@ func (c *ToolController) GetToolByID(ctx *gin.Context) {
 	})
 }
 
-// UpdateTool handles PUT /api/v1/tools/:id
+// UpdateTool handles PUT /api/v1/tools/:toolId
 func (c *ToolController) UpdateTool(ctx *gin.Context) {
-	id := ctx.Param("id")
+	id := ctx.Param("toolId")
 
 	var req dto.UpdateToolDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {

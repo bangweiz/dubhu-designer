@@ -42,8 +42,8 @@ type InstructionSummaryResponseDTO struct {
 	Name      string    `json:"name"`
 	Content   string    `json:"content"`
 	Version   int       `json:"version"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // InstructionResponseDTO represents a full instruction returned in HTTP responses.
@@ -54,6 +54,6 @@ type InstructionResponseDTO struct {
 	Content   string            `json:"content"`
 	Tools     []ToolResponseDTO `json:"tools"`
 	Version   int               `json:"version"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	CreatedAt time.Time         `json:"createdAt"`
+	UpdatedAt time.Time         `json:"updatedAt"`
 }

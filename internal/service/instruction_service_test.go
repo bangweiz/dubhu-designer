@@ -3,9 +3,16 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
+	"github.com/bangweiz/dubhu-designer/internal/models"
+	"github.com/bangweiz/dubhu-designer/internal/repository"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func TestErrReferencedToolsNotFound_Error(t *testing.T) {
@@ -99,5 +106,78 @@ func TestInstructionService_UpdateInstruction_InvalidHex(t *testing.T) {
 	})
 	if !errors.Is(err, ErrInstructionNotFound) {
 		t.Errorf("expected ErrInstructionNotFound, got %v", err)
+	}
+}
+
+func TestInstructionService_GetInstructionByID_Integration(t *testing.T) {
+	uri := "mongodb://localhost:27017/?directConnection=true"
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		t.Skip("MongoDB not available, skipping integration test")
+	}
+	defer client.Disconnect(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx, nil); err != nil {
+		t.Skip("MongoDB ping failed, skipping integration test")
+	}
+
+	testDB := client.Database("dubhu_test_instruction_service")
+	defer testDB.Drop(context.Background())
+
+	instRepo := repository.NewInstructionRepository(testDB)
+	toolRepo := repository.NewToolRepository(testDB)
+	svc := NewInstructionService(instRepo, toolRepo)
+
+	// Create tool
+	tool, err := toolRepo.Create(ctx, &models.Tool{
+		ID:          bson.NewObjectID(),
+		Name:        "service_tool",
+		Description: "Service Tool Description",
+		Inputs:      []models.ToolInput{},
+		Outputs:     []models.ToolOutput{},
+		Version:     1,
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("failed to create tool: %v", err)
+	}
+
+	// Create instruction
+	createDTO := dto.CreateInstructionDTO{
+		Name:    "service_test_inst",
+		Content: fmt.Sprintf("Use tool {{tool:%s}}", tool.ID.Hex()),
+	}
+	created, err := svc.CreateInstruction(ctx, createDTO)
+	if err != nil {
+		t.Fatalf("failed to create instruction: %v", err)
+	}
+
+	// Test GetInstructionByID with existing ID
+	got, err := svc.GetInstructionByID(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("unexpected error getting instruction by ID: %v", err)
+	}
+	if got.ID != created.ID {
+		t.Errorf("expected ID %s, got %s", created.ID, got.ID)
+	}
+	if got.Name != "service_test_inst" {
+		t.Errorf("expected Name 'service_test_inst', got %s", got.Name)
+	}
+	if len(got.Tools) != 1 || got.Tools[0].ID != tool.ID.Hex() {
+		t.Fatalf("expected 1 tool with ID %s, got %v", tool.ID.Hex(), got.Tools)
+	}
+	if got.Tools[0].Name != "service_tool" {
+		t.Errorf("expected tool name 'service_tool', got %s", got.Tools[0].Name)
+	}
+
+	// Test GetInstructionByID with non-existent ObjectID
+	nonExistentHex := bson.NewObjectID().Hex()
+	_, err = svc.GetInstructionByID(ctx, nonExistentHex)
+	if !errors.Is(err, ErrInstructionNotFound) {
+		t.Errorf("expected ErrInstructionNotFound for non-existent ID, got %v", err)
 	}
 }

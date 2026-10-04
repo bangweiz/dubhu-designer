@@ -167,3 +167,87 @@ func TestToInstructionResponseDTO_EmptyTools(t *testing.T) {
 		t.Errorf("expected 0 tools, got %d", len(dtoRes.Tools))
 	}
 }
+
+func TestToPopulatedInstructionResponseDTO(t *testing.T) {
+	id := bson.NewObjectID()
+	toolID1 := bson.NewObjectID()
+	toolID2 := bson.NewObjectID()
+	now := time.Now().UTC()
+
+	populated := &models.PopulatedInstruction{
+		Instruction: models.Instruction{
+			ID:        id,
+			Name:      "ordered_tools_instruction",
+			Content:   "Runs tool 2 then tool 1",
+			Tools:     []bson.ObjectID{toolID2, toolID1}, // Order: tool2, then tool1
+			Version:   1,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		ResolvedTools: []models.Tool{
+			// Mongo aggregation lookup may return tools in arbitrary/index order (e.g. tool1 first)
+			{
+				ID:          toolID1,
+				Name:        "tool_one",
+				Description: "First tool",
+				Inputs:      []models.ToolInput{},
+				Outputs:     []models.ToolOutput{},
+				Version:     1,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			},
+			{
+				ID:          toolID2,
+				Name:        "tool_two",
+				Description: "Second tool",
+				Inputs:      []models.ToolInput{},
+				Outputs:     []models.ToolOutput{},
+				Version:     1,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			},
+		},
+	}
+
+	dtoRes := ToPopulatedInstructionResponseDTO(populated)
+
+	if dtoRes.ID != id.Hex() {
+		t.Errorf("expected ID %s, got %s", id.Hex(), dtoRes.ID)
+	}
+	if len(dtoRes.Tools) != 2 {
+		t.Fatalf("expected 2 tools, got %d", len(dtoRes.Tools))
+	}
+	// Verify deterministic ordering matches Instruction.Tools order (toolID2 first, toolID1 second)
+	if dtoRes.Tools[0].ID != toolID2.Hex() || dtoRes.Tools[0].Name != "tool_two" {
+		t.Errorf("expected first tool to be tool_two, got %v", dtoRes.Tools[0])
+	}
+	if dtoRes.Tools[1].ID != toolID1.Hex() || dtoRes.Tools[1].Name != "tool_one" {
+		t.Errorf("expected second tool to be tool_one, got %v", dtoRes.Tools[1])
+	}
+}
+
+func TestToPopulatedInstructionResponseDTO_EmptyTools(t *testing.T) {
+	id := bson.NewObjectID()
+	now := time.Now().UTC()
+
+	populated := &models.PopulatedInstruction{
+		Instruction: models.Instruction{
+			ID:        id,
+			Name:      "no_tools_inst",
+			Content:   "content",
+			Tools:     []bson.ObjectID{},
+			Version:   1,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		ResolvedTools: []models.Tool{},
+	}
+
+	dtoRes := ToPopulatedInstructionResponseDTO(populated)
+	if dtoRes.Tools == nil {
+		t.Errorf("expected non-nil empty slice for Tools, got nil")
+	}
+	if len(dtoRes.Tools) != 0 {
+		t.Errorf("expected 0 tools, got %d", len(dtoRes.Tools))
+	}
+}

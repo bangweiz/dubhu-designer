@@ -31,13 +31,27 @@ func main() {
 		panic(fmt.Sprintf("Failed to initialize instruction indexes: %v", err))
 	}
 
+	conciergeRepo := repository.NewConciergeRepository(database)
+	if err := conciergeRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize concierge indexes: %v", err))
+	}
+
+	agentRepo := repository.NewAgentRepository(database)
+	if err := agentRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize agent indexes: %v", err))
+	}
+
 	// Dependency Injection: Services
 	toolService := service.NewToolService(toolRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
+	conciergeService := service.NewConciergeService(conciergeRepo)
+	agentService := service.NewAgentService(agentRepo, conciergeRepo)
 
 	// Dependency Injection: Controllers
 	toolController := controller.NewToolController(toolService)
 	instructionController := controller.NewInstructionController(instructionService)
+	conciergeController := controller.NewConciergeController(conciergeService)
+	agentController := controller.NewAgentController(agentService)
 
 	// Setup Gin router
 	router := gin.Default()
@@ -46,6 +60,8 @@ func main() {
 	apiV1 := router.Group("/api/v1")
 	toolController.RegisterRoutes(apiV1)
 	instructionController.RegisterRoutes(apiV1)
+	conciergeController.RegisterRoutes(apiV1)
+	agentController.RegisterRoutes(apiV1)
 
 	log.Println("Server running on :8080")
 	if err := router.Run(":8080"); err != nil {

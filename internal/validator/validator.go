@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/bangweiz/dubhu-designer/internal/models"
 )
 
 const (
@@ -86,3 +88,24 @@ func validateContent(field, value string) *FieldError {
 	}
 	return nil
 }
+
+// validateModel validates that a pre-trimmed model identifier is non-empty and
+// matches one of the supported model constants.
+func validateModel(field, value string) *FieldError {
+	if value == "" {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s is required and cannot be blank", field),
+			Value:  value,
+		}
+	}
+	if !models.IsValidAgentModel(value) {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s must be either '%s' or '%s'", field, models.ModelGemini35Flash, models.ModelGemini35FlashLite),
+			Value:  value,
+		}
+	}
+	return nil
+}
+

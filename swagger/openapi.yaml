@@ -99,7 +99,7 @@ paths:
                     type: string
                     example: "failed to query tools"
 
-  /tools/{id}:
+  /tools/{toolId}:
     get:
       summary: Get tool by ID
       description: Retrieves a specific tool specification by its MongoDB ObjectID.
@@ -107,7 +107,7 @@ paths:
       tags:
         - Tools
       parameters:
-        - name: id
+        - name: toolId
           in: path
           required: true
           description: Hexadecimal MongoDB ObjectID of the tool
@@ -151,7 +151,7 @@ paths:
       tags:
         - Tools
       parameters:
-        - name: id
+        - name: toolId
           in: path
           required: true
           description: Hexadecimal MongoDB ObjectID of the tool
@@ -318,7 +318,7 @@ paths:
                     type: string
                     example: "failed to query instructions"
 
-  /instructions/{id}:
+  /instructions/{instructionId}:
     get:
       summary: Get instruction by ID
       description: Retrieves a specific instruction by its MongoDB ObjectID.
@@ -326,7 +326,7 @@ paths:
       tags:
         - Instructions
       parameters:
-        - name: id
+        - name: instructionId
           in: path
           required: true
           description: Hexadecimal MongoDB ObjectID of the instruction
@@ -370,7 +370,7 @@ paths:
       tags:
         - Instructions
       parameters:
-        - name: id
+        - name: instructionId
           in: path
           required: true
           description: Hexadecimal MongoDB ObjectID of the instruction
@@ -437,6 +437,320 @@ paths:
                   error:
                     type: string
                     example: "failed to update instruction"
+
+  /concierges:
+    post:
+      summary: Create a new concierge
+      description: Creates a new concierge specification with initial version 1. Requires name and description.
+      operationId: createConcierge
+      tags:
+        - Concierges
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConciergeRequest'
+            example:
+              name: "front_desk_assistant"
+              description: "Handles customer inquiries and routing."
+      responses:
+        '201':
+          description: Concierge created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Concierge'
+        '400':
+          description: Bad request (invalid payload or validation failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed"
+                details:
+                  - field: "name"
+                    reason: "name is required and cannot be blank"
+                    value: ""
+        '409':
+          description: Conflict (concierge name already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                details:
+                  - field: "name"
+                    reason: "concierge name already exists"
+                    value: "front_desk_assistant"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to insert concierge"
+    get:
+      summary: List all concierges
+      description: Retrieves a list of all concierges.
+      operationId: listConcierges
+      tags:
+        - Concierges
+      responses:
+        '200':
+          description: A list of concierges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConciergeSummary'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to query concierges"
+
+  /concierges/{conciergeId}:
+    get:
+      summary: Get concierge by ID
+      description: Retrieves a specific concierge by its MongoDB ObjectID.
+      operationId: getConciergeById
+      tags:
+        - Concierges
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      responses:
+        '200':
+          description: Concierge retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Concierge'
+        '404':
+          description: Concierge not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Concierge not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to find concierge"
+
+  /concierges/{conciergeId}/agents:
+    post:
+      summary: Create a new agent
+      description: Creates a new agent specification scoped to the specified concierge with initial version 1. Requires name, description, and model. Agent name must be unique within the same concierge.
+      operationId: createAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+            example:
+              name: "research_assistant"
+              description: "Conducts deep literature research and analysis."
+              model: "gemini-3.5-flash"
+      responses:
+        '201':
+          description: Agent created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Agent'
+        '400':
+          description: Bad request (invalid payload or validation failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed"
+                details:
+                  - field: "name"
+                    reason: "name is required and cannot be blank"
+                    value: ""
+        '404':
+          description: Concierge not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Concierge not found"
+        '409':
+          description: Conflict (agent name already exists for this concierge)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                details:
+                  - field: "name"
+                    reason: "agent name already exists for this concierge"
+                    value: "research_assistant"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to insert agent"
+    get:
+      summary: List all agents for a concierge
+      description: Retrieves a list of all agents belonging to the specified concierge.
+      operationId: listAgents
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      responses:
+        '200':
+          description: A list of agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+        '404':
+          description: Concierge not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Concierge not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to query agents"
+
+  /concierges/{conciergeId}/agents/{agentId}:
+    get:
+      summary: Get agent by ID
+      description: Retrieves a specific agent by its MongoDB ObjectID under the specified concierge.
+      operationId: getAgentById
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the agent
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+      responses:
+        '200':
+          description: Agent retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Agent'
+        '404':
+          description: Concierge or agent not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Agent not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to find agent"
 
 components:
   schemas:
@@ -552,8 +866,8 @@ components:
         - version
         - inputs
         - outputs
-        - created_at
-        - updated_at
+        - createdAt
+        - updatedAt
       properties:
         id:
           type: string
@@ -577,11 +891,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ToolOutput'
-        created_at:
+        createdAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
@@ -633,8 +947,8 @@ components:
         - name
         - content
         - version
-        - created_at
-        - updated_at
+        - createdAt
+        - updatedAt
       properties:
         id:
           type: string
@@ -650,11 +964,11 @@ components:
           type: integer
           minimum: 1
           example: 1
-        created_at:
+        createdAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
@@ -667,8 +981,8 @@ components:
         - content
         - tools
         - version
-        - created_at
-        - updated_at
+        - createdAt
+        - updatedAt
       properties:
         id:
           type: string
@@ -689,14 +1003,163 @@ components:
           type: integer
           minimum: 1
           example: 1
-        created_at:
+        createdAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           example: "2026-10-03T03:50:00Z"
+
+    CreateConciergeRequest:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Unique concierge name
+          example: "front_desk_assistant"
+        description:
+          type: string
+          maxLength: 2000
+          description: Purpose and capabilities of the concierge
+          example: "Handles customer inquiries and routing."
+
+    ConciergeSummary:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the concierge
+          example: "651da3b57f8641a27e36c579"
+        name:
+          type: string
+          example: "front_desk_assistant"
+        description:
+          type: string
+          example: "Handles customer inquiries and routing."
+        version:
+          type: integer
+          minimum: 1
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-10-04T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-10-04T00:00:00Z"
+
+    Concierge:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - agents
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the concierge
+          example: "651da3b57f8641a27e36c579"
+        name:
+          type: string
+          example: "front_desk_assistant"
+        description:
+          type: string
+          example: "Handles customer inquiries and routing."
+        agents:
+          type: array
+          description: List of resolved agents belonging to this concierge
+          items:
+            $ref: '#/components/schemas/Agent'
+        version:
+          type: integer
+          minimum: 1
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-10-04T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-10-04T00:00:00Z"
+
+    CreateAgentRequest:
+      type: object
+      required:
+        - name
+        - description
+        - model
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Unique agent name
+          example: "research_assistant"
+        description:
+          type: string
+          maxLength: 2000
+          description: Purpose and capabilities of the agent
+          example: "Conducts deep literature research and analysis."
+        model:
+          type: string
+          enum:
+            - "gemini-3.5-flash"
+            - "gemini-3.5-flash-lite"
+          description: Supported foundation model identifier
+          example: "gemini-3.5-flash"
+
+    Agent:
+      type: object
+      required:
+        - id
+        - conciergeId
+        - name
+        - description
+        - model
+        - version
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the agent
+          example: "651da3b57f8641a27e36c579"
+        conciergeId:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          example: "651da3b57f8641a27e36c581"
+        name:
+          type: string
+          example: "research_assistant"
+        description:
+          type: string
+          example: "Conducts deep literature research and analysis."
+        model:
+          type: string
+          enum:
+            - "gemini-3.5-flash"
+            - "gemini-3.5-flash-lite"
+          example: "gemini-3.5-flash"
+        version:
+          type: integer
+          minimum: 1
+          example: 1
 
     FieldError:
       type: object
