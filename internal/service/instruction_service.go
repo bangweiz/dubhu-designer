@@ -115,27 +115,22 @@ func (s *InstructionService) CreateInstruction(ctx context.Context, input dto.Cr
 	return &res, nil
 }
 
-// GetInstructionByID retrieves an instruction by its hex ObjectID string and resolves all referenced tools.
+// GetInstructionByID retrieves an instruction by its hex ObjectID string and resolves all referenced tools via aggregation.
 func (s *InstructionService) GetInstructionByID(ctx context.Context, idStr string) (*dto.InstructionResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrInstructionNotFound
 	}
 
-	inst, err := s.instructionRepo.GetByID(ctx, objectID)
+	populated, err := s.instructionRepo.GetByIDWithTools(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}
-	if inst == nil {
+	if populated == nil {
 		return nil, ErrInstructionNotFound
 	}
 
-	tools, err := s.toolRepo.FindByIDs(ctx, inst.Tools)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve referenced tools: %w", err)
-	}
-
-	res := mapper.ToInstructionResponseDTO(inst, tools)
+	res := mapper.ToPopulatedInstructionResponseDTO(populated)
 	return &res, nil
 }
 

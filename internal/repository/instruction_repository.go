@@ -70,6 +70,39 @@ func (r *InstructionRepository) GetByID(ctx context.Context, id bson.ObjectID) (
 	return &inst, nil
 }
 
+// GetByIDWithTools finds an Instruction by ID and populates its referenced tools via MongoDB aggregation ($lookup).
+// Returns nil, nil if the instruction is not found.
+func (r *InstructionRepository) GetByIDWithTools(ctx context.Context, id bson.ObjectID) (*models.PopulatedInstruction, error) {
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.M{"_id": id}}},
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from":         collectionTools,
+			"localField":   "tools",
+			"foreignField": "_id",
+			"as":           "resolved_tools",
+		}}},
+	}
+
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate instruction with tools: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var populated models.PopulatedInstruction
+	if cursor.Next(ctx) {
+		if err := cursor.Decode(&populated); err != nil {
+			return nil, fmt.Errorf("failed to decode populated instruction: %w", err)
+		}
+		return &populated, nil
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error aggregating instruction with tools: %w", err)
+	}
+
+	return nil, nil
+}
+
 // List retrieves all Instruction documents from MongoDB without sorting, filtering, or pagination.
 func (r *InstructionRepository) List(ctx context.Context) ([]models.Instruction, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{})

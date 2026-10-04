@@ -29,8 +29,8 @@ func (c *InstructionController) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		instructions.POST("", c.CreateInstruction)
 		instructions.GET("", c.ListInstructions)
-		instructions.GET("/:id", c.GetInstructionByID)
-		instructions.PUT("/:id", c.UpdateInstruction)
+		instructions.GET("/:instructionId", c.GetInstructionByID)
+		instructions.PUT("/:instructionId", c.UpdateInstruction)
 	}
 }
 
@@ -103,9 +103,9 @@ func (c *InstructionController) ListInstructions(ctx *gin.Context) {
 	})
 }
 
-// GetInstructionByID handles GET /api/v1/instructions/:id
+// GetInstructionByID handles GET /api/v1/instructions/:instructionId
 func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
-	id := ctx.Param("id")
+	id := ctx.Param("instructionId")
 
 	resp, err := c.instructionService.GetInstructionByID(ctx.Request.Context(), id)
 	if err != nil {
@@ -126,9 +126,9 @@ func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 	})
 }
 
-// UpdateInstruction handles PUT /api/v1/instructions/:id
+// UpdateInstruction handles PUT /api/v1/instructions/:instructionId
 func (c *InstructionController) UpdateInstruction(ctx *gin.Context) {
-	id := ctx.Param("id")
+	id := ctx.Param("instructionId")
 
 	var req dto.UpdateInstructionDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
