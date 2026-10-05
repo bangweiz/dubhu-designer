@@ -43,5 +43,13 @@ type Agent struct {
 	Goal         string          `bson:"goal" json:"goal"`
 	Model        Model           `bson:"model" json:"model"`
 	Instructions []bson.ObjectID `bson:"instructions" json:"instructions"`
+	Tools        []bson.ObjectID `bson:"tools" json:"tools"`
 	Version      int             `bson:"version" json:"-"`
+}
+
+// PopulatedAgent represents an Agent with its assigned Instruction documents resolved via aggregation.
+type PopulatedAgent struct {
+	Agent                `bson:",inline"`
+	ResolvedInstructions []Instruction `bson:"resolved_instructions"`
+	ResolvedTools        []Tool        `bson:"resolved_tools"`
 }

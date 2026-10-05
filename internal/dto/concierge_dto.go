@@ -34,11 +34,11 @@ type ConciergeSummaryResponseDTO struct {
 
 // ConciergeResponseDTO represents a concierge returned in HTTP responses.
 type ConciergeResponseDTO struct {
-	ID          string             `json:"id"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Agents      []AgentResponseDTO `json:"agents"`
-	Version     int                `json:"-"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	UpdatedAt   time.Time          `json:"updatedAt"`
+	ID          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Agents      []AgentSummaryResponseDTO `json:"agents"`
+	Version     int                       `json:"-"`
+	CreatedAt   time.Time                 `json:"createdAt"`
+	UpdatedAt   time.Time                 `json:"updatedAt"`
 }

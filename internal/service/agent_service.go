@@ -17,14 +17,16 @@ type AgentService struct {
 	agentRepo       *repository.AgentRepository
 	conciergeRepo   *repository.ConciergeRepository
 	instructionRepo *repository.InstructionRepository
+	toolRepo        *repository.ToolRepository
 }
 
 // NewAgentService creates a new AgentService instance.
-func NewAgentService(agentRepo *repository.AgentRepository, conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository) *AgentService {
+func NewAgentService(agentRepo *repository.AgentRepository, conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository) *AgentService {
 	return &AgentService{
 		agentRepo:       agentRepo,
 		conciergeRepo:   conciergeRepo,
 		instructionRepo: instructionRepo,
+		toolRepo:        toolRepo,
 	}
 }
 
@@ -56,7 +58,7 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeIDStr string, i
 		return nil, err
 	}
 
-	res := mapper.ToAgentResponseDTO(created)
+	res := mapper.ToAgentResponseDTO(created, nil, nil)
 	return &res, nil
 }
 
@@ -75,27 +77,23 @@ func (s *AgentService) GetAgentByID(ctx context.Context, conciergeIDStr string, 
 		return nil, ErrAgentNotFound
 	}
 
-	concierge, err := s.conciergeRepo.GetByID(ctx, conciergeID)
+	populated, err := s.agentRepo.GetByIDPopulated(ctx, agentID, conciergeID)
 	if err != nil {
+		if errors.Is(err, repository.ErrConciergeNotFound) {
+			return nil, ErrConciergeNotFound
+		}
+		if errors.Is(err, repository.ErrAgentNotFound) {
+			return nil, ErrAgentNotFound
+		}
 		return nil, err
 	}
-	if concierge == nil {
-		return nil, ErrConciergeNotFound
-	}
 
-	for _, a := range concierge.Agents {
-		if a.ID == agentID {
-			a.ConciergeID = conciergeID
-			res := mapper.ToAgentResponseDTO(&a)
-			return &res, nil
-		}
-	}
-
-	return nil, ErrAgentNotFound
+	res := mapper.ToAgentResponseDTO(&populated.Agent, populated.ResolvedInstructions, populated.ResolvedTools)
+	return &res, nil
 }
 
-// ListAgents retrieves all agents for a given concierge and returns them as a slice of AgentResponseDTO.
-func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([]dto.AgentResponseDTO, error) {
+// ListAgents retrieves agent summaries for a given concierge without assigned instructions.
+func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([]dto.AgentSummaryResponseDTO, error) {
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return nil, ErrConciergeNotFound
@@ -117,7 +115,7 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([
 		agents[i].ConciergeID = conciergeID
 	}
 
-	return mapper.ToAgentResponseDTOList(agents), nil
+	return mapper.ToAgentSummaryResponseDTOList(agents), nil
 }
 
 // UpdateAgent updates an existing agent within a concierge.
@@ -167,7 +165,11 @@ func (s *AgentService) UpdateAgent(ctx context.Context, conciergeIDStr string, a
 		return nil, err
 	}
 
-	res := mapper.ToAgentResponseDTO(updated)
+	populated, err := s.agentRepo.GetByIDPopulated(ctx, updated.ID, conciergeID)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.ToAgentResponseDTO(&populated.Agent, populated.ResolvedInstructions, populated.ResolvedTools)
 	return &res, nil
 }
 
@@ -246,4 +248,58 @@ func (s *AgentService) UnassignInstruction(ctx context.Context, conciergeIDStr s
 	}
 
 	return nil
+}
+
+// AssignTool assigns an existing tool to an agent within a concierge.
+func (s *AgentService) AssignTool(ctx context.Context, conciergeIDStr, agentIDStr, toolIDStr string) error {
+	conciergeID, agentID, toolID, err := parseAgentReferenceIDs(conciergeIDStr, agentIDStr, toolIDStr, ErrToolNotFound)
+	if err != nil {
+		return err
+	}
+
+	tool, err := s.toolRepo.GetByID(ctx, toolID)
+	if err != nil {
+		return err
+	}
+	if tool == nil {
+		return ErrToolNotFound
+	}
+
+	return translateAgentReferenceError(s.agentRepo.AssignTool(ctx, conciergeID, agentID, toolID))
+}
+
+// UnassignTool removes a tool assignment from an agent idempotently.
+func (s *AgentService) UnassignTool(ctx context.Context, conciergeIDStr, agentIDStr, toolIDStr string) error {
+	conciergeID, agentID, toolID, err := parseAgentReferenceIDs(conciergeIDStr, agentIDStr, toolIDStr, ErrToolNotFound)
+	if err != nil {
+		return err
+	}
+	return translateAgentReferenceError(s.agentRepo.UnassignTool(ctx, conciergeID, agentID, toolID))
+}
+
+func parseAgentReferenceIDs(conciergeIDStr, agentIDStr, referenceIDStr string, invalidReferenceErr error) (bson.ObjectID, bson.ObjectID, bson.ObjectID, error) {
+	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, ErrConciergeNotFound
+	}
+	agentID, err := bson.ObjectIDFromHex(agentIDStr)
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, ErrAgentNotFound
+	}
+	referenceID, err := bson.ObjectIDFromHex(referenceIDStr)
+	if err != nil {
+		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, invalidReferenceErr
+	}
+	return conciergeID, agentID, referenceID, nil
+}
+
+func translateAgentReferenceError(err error) error {
+	switch {
+	case errors.Is(err, repository.ErrConciergeNotFound):
+		return ErrConciergeNotFound
+	case errors.Is(err, repository.ErrAgentNotFound):
+		return ErrAgentNotFound
+	default:
+		return err
+	}
 }
