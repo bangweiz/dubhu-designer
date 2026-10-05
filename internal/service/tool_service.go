@@ -6,14 +6,10 @@ import (
 	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/mapper"
 	"github.com/bangweiz/dubhu-designer/internal/repository"
 	"go.mongodb.org/mongo-driver/v2/bson"
-)
-
-var (
-	ErrToolNotFound        = errors.New("tool not found")
-	ErrToolVersionConflict = errors.New("version conflict: tool was modified by another operation")
 )
 
 // ToolService handles business logic operations for tools.
@@ -34,6 +30,9 @@ func (s *ToolService) CreateTool(ctx context.Context, input dto.CreateToolDTO) (
 	tool := mapper.ToInitialToolEntity(input)
 	createdTool, err := s.toolRepo.Create(ctx, tool)
 	if err != nil {
+		if errors.Is(err, repository.ErrToolNameExists) {
+			return nil, ErrToolNameExists
+		}
 		return nil, err
 	}
 
@@ -73,10 +72,15 @@ func (s *ToolService) ListTools(ctx context.Context) ([]dto.ToolResponseDTO, err
 
 // UpdateTool updates an existing tool with optimistic concurrency control.
 // Matches by ID and version, increments version, and updates updated_at timestamp.
-func (s *ToolService) UpdateTool(ctx context.Context, idStr string, input dto.UpdateToolDTO) (*dto.ToolResponseDTO, error) {
+func (s *ToolService) UpdateTool(ctx context.Context, idStr string, ifMatch string, input dto.UpdateToolDTO) (*dto.ToolResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrToolNotFound
+	}
+
+	expectedVersion, err := etag.Parse(ifMatch)
+	if err != nil {
+		return nil, ErrToolETagMismatch
 	}
 
 	updateDoc := bson.M{
@@ -87,15 +91,18 @@ func (s *ToolService) UpdateTool(ctx context.Context, idStr string, input dto.Up
 		"updated_at":  time.Now().UTC(),
 	}
 
-	updatedTool, err := s.toolRepo.Update(ctx, objectID, input.Version, updateDoc)
+	updatedTool, err := s.toolRepo.Update(ctx, objectID, expectedVersion, updateDoc)
 	if err != nil {
 		if errors.Is(err, repository.ErrVersionConflict) {
-			// Check if document exists at all to distinguish 404 from 409
+			// Check existence only after a failed conditional update to distinguish 404 from 412.
 			existing, getErr := s.toolRepo.GetByID(ctx, objectID)
 			if getErr == nil && existing == nil {
 				return nil, ErrToolNotFound
 			}
-			return nil, ErrToolVersionConflict
+			return nil, ErrToolETagMismatch
+		}
+		if errors.Is(err, repository.ErrToolNameExists) {
+			return nil, ErrToolNameExists
 		}
 		return nil, err
 	}

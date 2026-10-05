@@ -1,11 +1,10 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
-	"github.com/bangweiz/dubhu-designer/internal/repository"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/service"
 	"github.com/bangweiz/dubhu-designer/internal/validator"
 	"github.com/gin-gonic/gin"
@@ -30,6 +29,10 @@ func (c *AgentController) RegisterRoutes(rg *gin.RouterGroup) {
 		agents.POST("", c.CreateAgent)
 		agents.GET("", c.ListAgents)
 		agents.GET("/:agentId", c.GetAgentByID)
+		agents.PUT("/:agentId", c.UpdateAgent)
+		agents.POST("/:agentId/instructions/:instructionId", c.AssignInstruction)
+		agents.PUT("/:agentId/instructions/:instructionId", c.AssignInstruction)
+		agents.DELETE("/:agentId/instructions/:instructionId", c.UnassignInstruction)
 	}
 }
 
@@ -58,31 +61,11 @@ func (c *AgentController) CreateAgent(ctx *gin.Context) {
 
 	resp, err := c.agentService.CreateAgent(ctx.Request.Context(), conciergeID, req)
 	if err != nil {
-		if errors.Is(err, service.ErrConciergeNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Concierge not found",
-			})
-			return
-		}
-		if errors.Is(err, repository.ErrAgentNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "agent name already exists for this concierge",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
@@ -94,15 +77,7 @@ func (c *AgentController) ListAgents(ctx *gin.Context) {
 
 	agents, err := c.agentService.ListAgents(ctx.Request.Context(), conciergeID)
 	if err != nil {
-		if errors.Is(err, service.ErrConciergeNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Concierge not found",
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
@@ -118,25 +93,85 @@ func (c *AgentController) GetAgentByID(ctx *gin.Context) {
 
 	resp, err := c.agentService.GetAgentByID(ctx.Request.Context(), conciergeID, agentID)
 	if err != nil {
-		if errors.Is(err, service.ErrConciergeNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Concierge not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrAgentNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Agent not found",
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
+		writeServiceError(ctx, err)
+		return
+	}
+
+	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": resp,
+	})
+}
+
+// UpdateAgent handles PUT /api/v1/concierges/:conciergeId/agents/:agentId
+func (c *AgentController) UpdateAgent(ctx *gin.Context) {
+	conciergeID := ctx.Param("conciergeId")
+	agentID := ctx.Param("agentId")
+	ifMatch := ctx.GetHeader("If-Match")
+	if ifMatch == "" {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{
+			"error": "If-Match header is required",
 		})
 		return
 	}
 
+	var req dto.UpdateAgentDTO
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	req.Trim()
+
+	if errs := validator.ValidateUpdateAgent(&req); len(errs) > 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Validation failed",
+			"details": errs,
+		})
+		return
+	}
+
+	resp, err := c.agentService.UpdateAgent(ctx.Request.Context(), conciergeID, agentID, ifMatch, req)
+	if err != nil {
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
+		return
+	}
+
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
+}
+
+// AssignInstruction handles POST/PUT /api/v1/concierges/:conciergeId/agents/:agentId/instructions/:instructionId
+func (c *AgentController) AssignInstruction(ctx *gin.Context) {
+	conciergeID := ctx.Param("conciergeId")
+	agentID := ctx.Param("agentId")
+	instructionID := ctx.Param("instructionId")
+
+	err := c.agentService.AssignInstruction(ctx.Request.Context(), conciergeID, agentID, instructionID)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+// UnassignInstruction handles DELETE /api/v1/concierges/:conciergeId/agents/:agentId/instructions/:instructionId
+func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
+	conciergeID := ctx.Param("conciergeId")
+	agentID := ctx.Param("agentId")
+	instructionID := ctx.Param("instructionId")
+
+	err := c.agentService.UnassignInstruction(ctx.Request.Context(), conciergeID, agentID, instructionID)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

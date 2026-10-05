@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
@@ -12,12 +11,6 @@ import (
 )
 
 const collectionInstructions = "instructions"
-
-var (
-	ErrInstructionNameExists  = errors.New("instruction name already exists")
-	ErrInstructionNotFound    = errors.New("instruction not found")
-	ErrInstructionConflict    = errors.New("instruction version conflict")
-)
 
 // InstructionRepository manages Instruction persistence in MongoDB.
 type InstructionRepository struct {
@@ -151,5 +144,3 @@ func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, ex
 
 	return &updated, nil
 }
-
-

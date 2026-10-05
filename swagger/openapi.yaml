@@ -11,7 +11,7 @@ paths:
   /tools:
     post:
       summary: Create a new tool
-      description: Creates a new tool specification with inputs, outputs, and versioning.
+      description: Creates a new tool specification with inputs and outputs.
       operationId: createTool
       tags:
         - Tools
@@ -39,6 +39,11 @@ paths:
       responses:
         '201':
           description: Tool created successfully
+          headers:
+            ETag:
+              description: Strong ETag for the created tool representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -117,6 +122,11 @@ paths:
       responses:
         '200':
           description: Tool retrieved successfully
+          headers:
+            ETag:
+              description: Strong ETag for the current tool representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -146,7 +156,7 @@ paths:
                     example: "failed to find tool: connection refused"
     put:
       summary: Update tool by ID
-      description: Updates an existing tool specification using optimistic concurrency control. All fields can be updated. The current version number is required in the request body. On success, the version number is incremented.
+      description: Updates an existing tool specification. Requires the strong ETag returned when the tool was last read.
       operationId: updateTool
       tags:
         - Tools
@@ -158,6 +168,12 @@ paths:
           schema:
             type: string
             example: "651da3b57f8641a27e36c579"
+        - name: If-Match
+          in: header
+          required: true
+          description: Strong ETag from the latest tool representation
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -167,7 +183,6 @@ paths:
             example:
               name: "http_request_v2"
               description: "Updated HTTP request tool with timeout"
-              version: 1
               inputs:
                 - name: "url"
                   description: "Target URL"
@@ -181,6 +196,11 @@ paths:
       responses:
         '200':
           description: Tool updated successfully
+          headers:
+            ETag:
+              description: Strong ETag for the updated tool representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -211,17 +231,15 @@ paths:
                     type: string
                     example: "Tool not found"
         '409':
-          description: Conflict (version mismatch / concurrency conflict or duplicate name)
+          description: Conflict (tool name already exists)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Conflict"
-                details:
-                  - field: "version"
-                    reason: "tool was modified by another operation (version mismatch)"
-                    value: 1
+        '412':
+          description: The supplied If-Match ETag does not match the current tool representation
+        '428':
+          description: If-Match header is required
         '500':
           description: Internal server error
           content:
@@ -252,6 +270,11 @@ paths:
       responses:
         '201':
           description: Instruction created successfully
+          headers:
+            ETag:
+              description: Strong ETag for the created instruction representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -336,6 +359,11 @@ paths:
       responses:
         '200':
           description: Instruction retrieved successfully
+          headers:
+            ETag:
+              description: Strong ETag for the current instruction representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -365,7 +393,7 @@ paths:
                     example: "failed to find instruction"
     put:
       summary: Update instruction by ID
-      description: Updates an existing instruction using optimistic concurrency control. All fields can be updated. Any tool references in content are resolved, and the request is rejected with 400 Bad Request if referenced tools do not exist. The current version number is required in the request body. On success, the version number is incremented.
+      description: Updates an existing instruction. Any tool references in content are resolved. Requires the strong ETag returned when the instruction was last read.
       operationId: updateInstruction
       tags:
         - Instructions
@@ -377,6 +405,12 @@ paths:
           schema:
             type: string
             example: "651da3b57f8641a27e36c579"
+        - name: If-Match
+          in: header
+          required: true
+          description: Strong ETag from the latest instruction representation
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -386,10 +420,14 @@ paths:
             example:
               name: "search_and_summarize_v2"
               content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
-              version: 1
       responses:
         '200':
           description: Instruction updated successfully
+          headers:
+            ETag:
+              description: Strong ETag for the updated instruction representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -416,17 +454,15 @@ paths:
                     type: string
                     example: "Instruction not found"
         '409':
-          description: Conflict (version mismatch / concurrency conflict or duplicate name)
+          description: Conflict (instruction name already exists)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Conflict"
-                details:
-                  - field: "version"
-                    reason: "instruction was modified by another operation (version mismatch)"
-                    value: 1
+        '412':
+          description: The supplied If-Match ETag does not match the current instruction representation
+        '428':
+          description: If-Match header is required
         '500':
           description: Internal server error
           content:
@@ -441,7 +477,7 @@ paths:
   /concierges:
     post:
       summary: Create a new concierge
-      description: Creates a new concierge specification with initial version 1. Requires name and description.
+      description: Creates a new concierge specification. Requires name and description.
       operationId: createConcierge
       tags:
         - Concierges
@@ -576,7 +612,7 @@ paths:
   /concierges/{conciergeId}/agents:
     post:
       summary: Create a new agent
-      description: Creates a new agent specification scoped to the specified concierge with initial version 1. Requires name, description, and model. Agent name must be unique within the same concierge.
+      description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge.
       operationId: createAgent
       tags:
         - Agents
@@ -597,10 +633,16 @@ paths:
             example:
               name: "research_assistant"
               description: "Conducts deep literature research and analysis."
+              goal: "Summarize research papers and extract key insights."
               model: "gemini-3.5-flash"
       responses:
         '201':
           description: Agent created successfully
+          headers:
+            ETag:
+              description: Strong ETag for the created agent representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -724,6 +766,11 @@ paths:
       responses:
         '200':
           description: Agent retrieved successfully
+          headers:
+            ETag:
+              description: Strong ETag for the current agent representation
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -751,6 +798,220 @@ paths:
                   error:
                     type: string
                     example: "failed to find agent"
+    put:
+      summary: Update agent by ID
+      description: Updates an existing agent specification under the specified concierge. Name, description, goal, and model can be updated. Requires the strong ETag returned when the agent was last read.
+      operationId: updateAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the agent
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+        - name: If-Match
+          in: header
+          required: true
+          description: Strong ETag from the latest agent representation
+          schema:
+            type: string
+            example: '"1"'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+            example:
+              name: "research_assistant_v2"
+              description: "Updated deep literature research and analysis agent."
+              goal: "Summarize research papers, extract key insights, and generate critical evaluations."
+              model: "gemini-3.5-flash"
+      responses:
+        '200':
+          description: Agent updated successfully
+          headers:
+            ETag:
+              description: Strong ETag for the updated agent representation
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Agent'
+        '400':
+          description: Bad request (invalid payload or validation failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed"
+                details:
+                  - field: "name"
+                    reason: "name cannot exceed 200 characters"
+                    value: "..."
+        '404':
+          description: Concierge or agent not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Agent not found"
+        '409':
+          description: Conflict (agent name already exists for this concierge)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                details:
+                  - field: "name"
+                    reason: "agent name already exists for this concierge"
+                    value: "research_assistant"
+        '412':
+          description: The supplied If-Match ETag does not match the current agent representation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '428':
+          description: If-Match header is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to update agent"
+
+  /concierges/{conciergeId}/agents/{agentId}/instructions/{instructionId}:
+    post:
+      summary: Assign an instruction to an agent
+      description: Assigns an existing instruction specification to the agent. Validates that the concierge, agent, and instruction exist. Duplicate assignments are handled idempotently.
+      operationId: assignInstructionToAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the agent
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+        - name: instructionId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c580"
+      responses:
+        '204':
+          description: Instruction assigned successfully
+        '404':
+          description: Concierge, agent, or instruction not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Instruction not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to assign instruction to agent"
+    delete:
+      summary: Unassign an instruction from an agent
+      description: Removes an instruction assignment from the agent. Validates that the concierge and agent exist. If the instruction is not assigned, the operation succeeds idempotently.
+      operationId: unassignInstructionFromAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the agent
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+        - name: instructionId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the instruction
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c580"
+      responses:
+        '204':
+          description: Instruction unassigned successfully
+        '404':
+          description: Concierge, agent, or instruction not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Agent not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "failed to unassign instruction from agent"
 
 components:
   schemas:
@@ -827,7 +1088,6 @@ components:
       required:
         - name
         - description
-        - version
       properties:
         name:
           type: string
@@ -839,11 +1099,6 @@ components:
           maxLength: 2000
           description: Tool description
           example: "Updated HTTP request tool with timeout"
-        version:
-          type: integer
-          minimum: 1
-          description: Current version of the tool required for optimistic locking
-          example: 1
         inputs:
           type: array
           description: List of tool inputs. Can be omitted, null, or empty array.
@@ -863,7 +1118,6 @@ components:
         - id
         - name
         - description
-        - version
         - inputs
         - outputs
         - createdAt
@@ -879,10 +1133,6 @@ components:
         description:
           type: string
           example: "Sends an HTTP request and returns the response"
-        version:
-          type: integer
-          minimum: 1
-          example: 1
         inputs:
           type: array
           items:
@@ -922,7 +1172,6 @@ components:
       required:
         - name
         - content
-        - version
       properties:
         name:
           type: string
@@ -934,11 +1183,6 @@ components:
           maxLength: 100000
           description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
           example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
-        version:
-          type: integer
-          minimum: 1
-          description: Current version of the instruction required for optimistic locking
-          example: 1
 
     InstructionSummary:
       type: object
@@ -946,7 +1190,6 @@ components:
         - id
         - name
         - content
-        - version
         - createdAt
         - updatedAt
       properties:
@@ -960,10 +1203,6 @@ components:
         content:
           type: string
           example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
-        version:
-          type: integer
-          minimum: 1
-          example: 1
         createdAt:
           type: string
           format: date-time
@@ -980,7 +1219,6 @@ components:
         - name
         - content
         - tools
-        - version
         - createdAt
         - updatedAt
       properties:
@@ -999,10 +1237,6 @@ components:
           description: List of resolved tools referenced by this instruction
           items:
             $ref: '#/components/schemas/Tool'
-        version:
-          type: integer
-          minimum: 1
-          example: 1
         createdAt:
           type: string
           format: date-time
@@ -1035,7 +1269,6 @@ components:
         - id
         - name
         - description
-        - version
         - createdAt
         - updatedAt
       properties:
@@ -1049,10 +1282,6 @@ components:
         description:
           type: string
           example: "Handles customer inquiries and routing."
-        version:
-          type: integer
-          minimum: 1
-          example: 1
         createdAt:
           type: string
           format: date-time
@@ -1069,7 +1298,6 @@ components:
         - name
         - description
         - agents
-        - version
         - createdAt
         - updatedAt
       properties:
@@ -1088,10 +1316,6 @@ components:
           description: List of resolved agents belonging to this concierge
           items:
             $ref: '#/components/schemas/Agent'
-        version:
-          type: integer
-          minimum: 1
-          example: 1
         createdAt:
           type: string
           format: date-time
@@ -1106,6 +1330,7 @@ components:
       required:
         - name
         - description
+        - goal
         - model
       properties:
         name:
@@ -1118,6 +1343,42 @@ components:
           maxLength: 2000
           description: Purpose and capabilities of the agent
           example: "Conducts deep literature research and analysis."
+        goal:
+          type: string
+          maxLength: 2000
+          description: Primary objective or mission of the agent
+          example: "Summarize research papers and extract key insights."
+        model:
+          type: string
+          enum:
+            - "gemini-3.5-flash"
+            - "gemini-3.5-flash-lite"
+          description: Supported foundation model identifier
+          example: "gemini-3.5-flash"
+
+    UpdateAgentRequest:
+      type: object
+      required:
+        - name
+        - description
+        - goal
+        - model
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Unique agent name within the concierge
+          example: "research_assistant_v2"
+        description:
+          type: string
+          maxLength: 2000
+          description: Purpose and capabilities of the agent
+          example: "Updated deep literature research and analysis agent."
+        goal:
+          type: string
+          maxLength: 2000
+          description: Primary objective or mission of the agent
+          example: "Summarize research papers, extract key insights, and generate critical evaluations."
         model:
           type: string
           enum:
@@ -1133,8 +1394,9 @@ components:
         - conciergeId
         - name
         - description
+        - goal
         - model
-        - version
+        - instructions
       properties:
         id:
           type: string
@@ -1150,16 +1412,21 @@ components:
         description:
           type: string
           example: "Conducts deep literature research and analysis."
+        goal:
+          type: string
+          example: "Summarize research papers and extract key insights."
         model:
           type: string
           enum:
             - "gemini-3.5-flash"
             - "gemini-3.5-flash-lite"
           example: "gemini-3.5-flash"
-        version:
-          type: integer
-          minimum: 1
-          example: 1
+        instructions:
+          type: array
+          description: List of hexadecimal MongoDB ObjectIDs of instructions assigned to this agent
+          items:
+            type: string
+            example: "651da3b57f8641a27e36c580"
 
     FieldError:
       type: object

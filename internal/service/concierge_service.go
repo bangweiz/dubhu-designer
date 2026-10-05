@@ -10,10 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-var (
-	ErrConciergeNotFound = errors.New("concierge not found")
-)
-
 // ConciergeService handles business logic operations for concierges.
 type ConciergeService struct {
 	conciergeRepo *repository.ConciergeRepository
@@ -32,6 +28,9 @@ func (s *ConciergeService) CreateConcierge(ctx context.Context, input dto.Create
 	entity := mapper.ToInitialConciergeEntity(input)
 	created, err := s.conciergeRepo.Create(ctx, entity)
 	if err != nil {
+		if errors.Is(err, repository.ErrConciergeNameExists) {
+			return nil, ErrConciergeNameExists
+		}
 		return nil, err
 	}
 

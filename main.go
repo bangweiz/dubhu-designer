@@ -45,7 +45,7 @@ func main() {
 	toolService := service.NewToolService(toolRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
 	conciergeService := service.NewConciergeService(conciergeRepo)
-	agentService := service.NewAgentService(agentRepo, conciergeRepo)
+	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo)
 
 	// Dependency Injection: Controllers
 	toolController := controller.NewToolController(toolService)

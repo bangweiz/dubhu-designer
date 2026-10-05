@@ -20,11 +20,9 @@ func (d *CreateInstructionDTO) Trim() {
 }
 
 // UpdateInstructionDTO represents the request payload for updating an instruction.
-// Version is required for optimistic concurrency control.
 type UpdateInstructionDTO struct {
 	Name    string `json:"name" binding:"required"`
 	Content string `json:"content" binding:"required"`
-	Version int    `json:"version" binding:"required"`
 }
 
 // Trim trims leading and trailing whitespace from string fields in UpdateInstructionDTO.
@@ -41,7 +39,7 @@ type InstructionSummaryResponseDTO struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Content   string    `json:"content"`
-	Version   int       `json:"version"`
+	Version   int       `json:"-"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -53,7 +51,7 @@ type InstructionResponseDTO struct {
 	Name      string            `json:"name"`
 	Content   string            `json:"content"`
 	Tools     []ToolResponseDTO `json:"tools"`
-	Version   int               `json:"version"`
+	Version   int               `json:"-"`
 	CreatedAt time.Time         `json:"createdAt"`
 	UpdatedAt time.Time         `json:"updatedAt"`
 }

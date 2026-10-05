@@ -23,6 +23,7 @@
 									"        pm.collectionVariables.set(\"toolId\", jsonData.data.id);",
 									"        console.log(\"Saved toolId:\", jsonData.data.id);",
 									"    }",
+									"    pm.collectionVariables.set(\"toolEtag\", pm.response.headers.get(\"ETag\"));",
 									"}"
 								],
 								"type": "text/javascript"
@@ -55,7 +56,7 @@
 								"tools"
 							]
 						},
-						"description": "Creates a new tool specification with initial version 1. Automatically saves the created tool's ID to the collection variable `toolId` upon success."
+						"description": "Creates a new tool specification and saves its ID and ETag."
 					},
 					"response": []
 				},
@@ -79,6 +80,17 @@
 				},
 				{
 					"name": "Get Tool by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set(\"toolEtag\", pm.response.headers.get(\"ETag\")); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -105,17 +117,32 @@
 				},
 				{
 					"name": "Update Tool",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set(\"toolEtag\", pm.response.headers.get(\"ETag\")); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "If-Match",
+								"value": "{{toolEtag}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"http_request_v2\",\n  \"description\": \"Performs optimized HTTP requests to external APIs\",\n  \"version\": 1,\n  \"inputs\": [\n    {\n      \"name\": \"url\",\n      \"type\": \"string\",\n      \"description\": \"Destination endpoint URL\",\n      \"required\": true\n    }\n  ],\n  \"outputs\": [\n    {\n      \"name\": \"status_code\",\n      \"type\": \"number\",\n      \"description\": \"HTTP response status code\"\n    }\n  ]\n}",
+							"raw": "{\n  \"name\": \"http_request_v2\",\n  \"description\": \"Performs optimized HTTP requests to external APIs\",\n  \"inputs\": [\n    {\n      \"name\": \"url\",\n      \"type\": \"string\",\n      \"description\": \"Destination endpoint URL\",\n      \"required\": true\n    }\n  ],\n  \"outputs\": [\n    {\n      \"name\": \"status_code\",\n      \"type\": \"number\",\n      \"description\": \"HTTP response status code\"\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -139,7 +166,7 @@
 								}
 							]
 						},
-						"description": "Updates an existing tool specification using optimistic concurrency control. Requires the current version number in the payload. Increments version on success."
+						"description": "Updates a tool using the ETag captured by Create/Get Tool."
 					},
 					"response": []
 				}
@@ -162,6 +189,7 @@
 									"        pm.collectionVariables.set(\"instructionId\", jsonData.data.id);",
 									"        console.log(\"Saved instructionId:\", jsonData.data.id);",
 									"    }",
+									"    pm.collectionVariables.set(\"instructionEtag\", pm.response.headers.get(\"ETag\"));",
 									"}"
 								],
 								"type": "text/javascript"
@@ -218,6 +246,17 @@
 				},
 				{
 					"name": "Get Instruction by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set(\"instructionEtag\", pm.response.headers.get(\"ETag\")); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -244,17 +283,32 @@
 				},
 				{
 					"name": "Update Instruction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set(\"instructionEtag\", pm.response.headers.get(\"ETag\")); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "If-Match",
+								"value": "{{instructionEtag}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"search_and_summarize_v2\",\n  \"content\": \"Search the web using {{tool:{{toolId}}}} and format output as markdown.\",\n  \"version\": 1\n}",
+							"raw": "{\n  \"name\": \"search_and_summarize_v2\",\n  \"content\": \"Search the web using {{tool:{{toolId}}}} and format output as markdown.\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -278,7 +332,7 @@
 								}
 							]
 						},
-						"description": "Updates an existing instruction using optimistic concurrency control. Validates referenced tool IDs and increments version on success."
+						"description": "Updates an instruction using the ETag captured by Create/Get Instruction."
 					},
 					"response": []
 				}
@@ -333,7 +387,7 @@
 								"concierges"
 							]
 						},
-						"description": "Creates a new concierge specification with initial version 1. Requires name and description. Saves the created concierge's ID to `conciergeId` on success."
+						"description": "Creates a new concierge specification. Requires name and description. Saves the created concierge's ID to `conciergeId` on success."
 					},
 					"response": []
 				},
@@ -400,6 +454,7 @@
 									"        pm.collectionVariables.set(\"agentId\", jsonData.data.id);",
 									"        console.log(\"Saved agentId:\", jsonData.data.id);",
 									"    }",
+									"    pm.collectionVariables.set(\"agentEtag\", pm.response.headers.get(\"ETag\"));",
 									"}"
 								],
 								"type": "text/javascript"
@@ -416,7 +471,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"research_assistant\",\n  \"description\": \"Conducts deep literature research and analysis.\",\n  \"model\": \"gemini-3.5-flash\"\n}",
+							"raw": "{\n  \"name\": \"research_assistant\",\n  \"description\": \"Conducts deep literature research and analysis.\",\n  \"goal\": \"Summarize research papers and extract key insights.\",\n  \"model\": \"gemini-3.5-flash\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -441,7 +496,7 @@
 								}
 							]
 						},
-						"description": "Creates a new agent specification scoped to the specified concierge with initial version 1. Requires name, description, and model. Saves the created agent's ID to `agentId` on success."
+						"description": "Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Saves the created agent's ID and ETag on success."
 					},
 					"response": []
 				},
@@ -474,6 +529,19 @@
 				},
 				{
 					"name": "Get Agent by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"agentEtag\", pm.response.headers.get(\"ETag\"));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -504,6 +572,150 @@
 						"description": "Retrieves a specific agent specification by its hexadecimal MongoDB ObjectID under the specified concierge."
 					},
 					"response": []
+				},
+				{
+					"name": "Update Agent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"agentEtag\", pm.response.headers.get(\"ETag\"));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "If-Match",
+								"value": "{{agentEtag}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"research_assistant_v2\",\n  \"description\": \"Conducts deep literature research and analysis.\",\n  \"goal\": \"Summarize research papers and extract key insights.\",\n  \"model\": \"gemini-3.5-flash\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents",
+								":agentId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								}
+							]
+						},
+						"description": "Updates an existing agent specification using the ETag captured by Create/Get Agent. Returns 412 if the agent changed, or 428 when If-Match is missing."
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Instruction to Agent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents",
+								":agentId",
+								"instructions",
+								":instructionId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								},
+								{
+									"key": "instructionId",
+									"value": "{{instructionId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								}
+							]
+						},
+						"description": "Assigns an instruction to an agent within the specified concierge."
+					},
+					"response": []
+				},
+				{
+					"name": "Unassign Instruction from Agent",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"agents",
+								":agentId",
+								"instructions",
+								":instructionId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								},
+								{
+									"key": "instructionId",
+									"value": "{{instructionId}}",
+									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								}
+							]
+						},
+						"description": "Removes an instruction assignment from an agent within the specified concierge."
+					},
+					"response": []
 				}
 			]
 		}
@@ -532,6 +744,21 @@
 		{
 			"key": "agentId",
 			"value": "651da3b57f8641a27e36c582",
+			"type": "string"
+		},
+		{
+			"key": "agentEtag",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "toolEtag",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "instructionEtag",
+			"value": "",
 			"type": "string"
 		}
 	]

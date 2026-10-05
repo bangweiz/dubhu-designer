@@ -10,6 +10,7 @@ import (
 type CreateAgentDTO struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description" binding:"required"`
+	Goal        string `json:"goal" binding:"required"`
 	Model       string `json:"model" binding:"required"`
 }
 
@@ -17,6 +18,23 @@ type CreateAgentDTO struct {
 func (d *CreateAgentDTO) Trim() {
 	d.Name = strings.TrimSpace(d.Name)
 	d.Description = strings.TrimSpace(d.Description)
+	d.Goal = strings.TrimSpace(d.Goal)
+	d.Model = strings.TrimSpace(d.Model)
+}
+
+// UpdateAgentDTO represents the request payload for updating an agent.
+type UpdateAgentDTO struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Goal        string `json:"goal" binding:"required"`
+	Model       string `json:"model" binding:"required"`
+}
+
+// Trim trims leading and trailing whitespace from string fields in UpdateAgentDTO.
+func (d *UpdateAgentDTO) Trim() {
+	d.Name = strings.TrimSpace(d.Name)
+	d.Description = strings.TrimSpace(d.Description)
+	d.Goal = strings.TrimSpace(d.Goal)
 	d.Model = strings.TrimSpace(d.Model)
 }
 
@@ -24,10 +42,13 @@ func (d *CreateAgentDTO) Trim() {
 
 // AgentResponseDTO represents an agent returned in HTTP responses.
 type AgentResponseDTO struct {
-	ID          string `json:"id"`
-	ConciergeID string `json:"conciergeId"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Model       string `json:"model"`
-	Version     int    `json:"version"`
+	ID           string   `json:"id"`
+	ConciergeID  string   `json:"conciergeId"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Goal         string   `json:"goal"`
+	Model        string   `json:"model"`
+	Instructions []string `json:"instructions"`
+	// Version is internal state used to generate the HTTP ETag.
+	Version int `json:"-"`
 }

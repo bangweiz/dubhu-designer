@@ -1,11 +1,10 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
-	"github.com/bangweiz/dubhu-designer/internal/repository"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/service"
 	"github.com/bangweiz/dubhu-designer/internal/validator"
 	"github.com/gin-gonic/gin"
@@ -57,25 +56,11 @@ func (c *ToolController) CreateTool(ctx *gin.Context) {
 
 	toolResponse, err := c.toolService.CreateTool(ctx.Request.Context(), req)
 	if err != nil {
-		if errors.Is(err, repository.ErrToolNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "tool name already exists",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(toolResponse.Version))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": toolResponse,
 	})
@@ -85,9 +70,7 @@ func (c *ToolController) CreateTool(ctx *gin.Context) {
 func (c *ToolController) ListTools(ctx *gin.Context) {
 	tools, err := c.toolService.ListTools(ctx.Request.Context())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
@@ -102,18 +85,11 @@ func (c *ToolController) GetToolByID(ctx *gin.Context) {
 
 	toolResponse, err := c.toolService.GetToolByID(ctx.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrToolNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Tool not found",
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(toolResponse.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": toolResponse,
 	})
@@ -122,6 +98,11 @@ func (c *ToolController) GetToolByID(ctx *gin.Context) {
 // UpdateTool handles PUT /api/v1/tools/:toolId
 func (c *ToolController) UpdateTool(ctx *gin.Context) {
 	id := ctx.Param("toolId")
+	ifMatch := ctx.GetHeader("If-Match")
+	if ifMatch == "" {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
+		return
+	}
 
 	var req dto.UpdateToolDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -142,46 +123,13 @@ func (c *ToolController) UpdateTool(ctx *gin.Context) {
 		return
 	}
 
-	toolResponse, err := c.toolService.UpdateTool(ctx.Request.Context(), id, req)
+	toolResponse, err := c.toolService.UpdateTool(ctx.Request.Context(), id, ifMatch, req)
 	if err != nil {
-		if errors.Is(err, service.ErrToolNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Tool not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrToolVersionConflict) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "version",
-						Reason: "tool was modified by another operation (version mismatch)",
-						Value:  req.Version,
-					},
-				},
-			})
-			return
-		}
-		if errors.Is(err, repository.ErrToolNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "tool name already exists",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(toolResponse.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": toolResponse,
 	})
