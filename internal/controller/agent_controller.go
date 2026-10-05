@@ -33,6 +33,9 @@ func (c *AgentController) RegisterRoutes(rg *gin.RouterGroup) {
 		agents.POST("/:agentId/instructions/:instructionId", c.AssignInstruction)
 		agents.PUT("/:agentId/instructions/:instructionId", c.AssignInstruction)
 		agents.DELETE("/:agentId/instructions/:instructionId", c.UnassignInstruction)
+		agents.POST("/:agentId/tools/:toolId", c.AssignTool)
+		agents.PUT("/:agentId/tools/:toolId", c.AssignTool)
+		agents.DELETE("/:agentId/tools/:toolId", c.UnassignTool)
 	}
 }
 
@@ -173,5 +176,35 @@ func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
 		return
 	}
 
+	ctx.Status(http.StatusNoContent)
+}
+
+// AssignTool handles POST/PUT /api/v1/concierges/:conciergeId/agents/:agentId/tools/:toolId
+func (c *AgentController) AssignTool(ctx *gin.Context) {
+	err := c.agentService.AssignTool(
+		ctx.Request.Context(),
+		ctx.Param("conciergeId"),
+		ctx.Param("agentId"),
+		ctx.Param("toolId"),
+	)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+// UnassignTool handles DELETE /api/v1/concierges/:conciergeId/agents/:agentId/tools/:toolId
+func (c *AgentController) UnassignTool(ctx *gin.Context) {
+	err := c.agentService.UnassignTool(
+		ctx.Request.Context(),
+		ctx.Param("conciergeId"),
+		ctx.Param("agentId"),
+		ctx.Param("toolId"),
+	)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
 	ctx.Status(http.StatusNoContent)
 }

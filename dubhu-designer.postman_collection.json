@@ -169,6 +169,44 @@
 						"description": "Updates a tool using the ETag captured by Create/Get Tool."
 					},
 					"response": []
+				},
+				{
+					"name": "Assign Tool to Agent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
+							"host": ["{{baseUrl}}"],
+							"path": ["concierges", ":conciergeId", "agents", ":agentId", "tools", ":toolId"],
+							"variable": [
+								{"key": "conciergeId", "value": "{{conciergeId}}"},
+								{"key": "agentId", "value": "{{agentId}}"},
+								{"key": "toolId", "value": "{{toolId}}"}
+							]
+						},
+						"description": "Assigns an existing tool to an agent idempotently."
+					},
+					"response": []
+				},
+				{
+					"name": "Unassign Tool from Agent",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
+							"host": ["{{baseUrl}}"],
+							"path": ["concierges", ":conciergeId", "agents", ":agentId", "tools", ":toolId"],
+							"variable": [
+								{"key": "conciergeId", "value": "{{conciergeId}}"},
+								{"key": "agentId", "value": "{{agentId}}"},
+								{"key": "toolId", "value": "{{toolId}}"}
+							]
+						},
+						"description": "Removes a tool assignment from an agent idempotently."
+					},
+					"response": []
 				}
 			]
 		},
@@ -523,7 +561,7 @@
 								}
 							]
 						},
-						"description": "Retrieves all agents registered under the specified concierge."
+						"description": "Retrieves summaries of all agents registered under the specified concierge without assigned instruction IDs."
 					},
 					"response": []
 				},

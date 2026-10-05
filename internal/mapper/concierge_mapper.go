@@ -24,7 +24,7 @@ func ToInitialConciergeEntity(input dto.CreateConciergeDTO) *models.Concierge {
 }
 
 // ToConciergeResponseDTO converts a domain Concierge model to ConciergeResponseDTO,
-// ensuring Agents is always an initialized array of AgentResponseDTO ([] if empty).
+// ensuring Agents is always an initialized array of AgentSummaryResponseDTO ([] if empty).
 func ToConciergeResponseDTO(c *models.Concierge) dto.ConciergeResponseDTO {
 	agents := make([]models.Agent, len(c.Agents))
 	for i := range c.Agents {
@@ -36,7 +36,7 @@ func ToConciergeResponseDTO(c *models.Concierge) dto.ConciergeResponseDTO {
 		ID:          c.ID.Hex(),
 		Name:        c.Name,
 		Description: c.Description,
-		Agents:      ToAgentResponseDTOList(agents),
+		Agents:      ToAgentSummaryResponseDTOList(agents),
 		Version:     c.Version,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,

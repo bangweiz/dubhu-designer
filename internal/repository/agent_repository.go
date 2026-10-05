@@ -33,9 +33,6 @@ func (r *AgentRepository) InitIndexes(ctx context.Context) error {
 // Returns ErrConciergeNotFound if the parent concierge does not exist.
 // Returns ErrAgentNameExists if an agent with the same name already exists in this concierge.
 func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID, agent *models.Agent) (*models.Agent, error) {
-	if agent.Instructions == nil {
-		agent.Instructions = []bson.ObjectID{}
-	}
 	filter := bson.M{
 		"_id":         conciergeID,
 		"agents.name": bson.M{"$ne": agent.Name},
@@ -85,6 +82,77 @@ func (r *AgentRepository) GetByIDAndConciergeID(ctx context.Context, agentID bso
 		}
 	}
 	return nil, ErrAgentNotFound
+}
+
+// GetByIDPopulated finds an Agent and resolves its assigned instructions and tools in one aggregation.
+// Returns ErrConciergeNotFound if the concierge does not exist.
+// Returns ErrAgentNotFound if the agent does not exist in the concierge.
+func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.ObjectID, conciergeID bson.ObjectID) (*models.PopulatedAgent, error) {
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.M{"_id": conciergeID}}},
+		bson.D{{Key: "$set", Value: bson.M{
+			"selected_agent": bson.M{
+				"$arrayElemAt": []any{
+					bson.M{"$filter": bson.M{
+						"input": "$agents",
+						"as":    "agent",
+						"cond":  bson.M{"$eq": []any{"$$agent._id", agentID}},
+					}},
+					0,
+				},
+			},
+		}}},
+		bson.D{{Key: "$project", Value: bson.M{
+			"_id":          "$selected_agent._id",
+			"concierge_id": "$_id",
+			"name":         "$selected_agent.name",
+			"description":  "$selected_agent.description",
+			"goal":         "$selected_agent.goal",
+			"model":        "$selected_agent.model",
+			"instructions": "$selected_agent.instructions",
+			"tools":        "$selected_agent.tools",
+			"version":      "$selected_agent.version",
+		}}},
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from":         collectionInstructions,
+			"localField":   "instructions",
+			"foreignField": "_id",
+			"as":           "resolved_instructions",
+		}}},
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from":         collectionTools,
+			"localField":   "tools",
+			"foreignField": "_id",
+			"as":           "resolved_tools",
+		}}},
+	}
+
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate agent with instructions: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var populated models.PopulatedAgent
+	if cursor.Next(ctx) {
+		if err := cursor.Decode(&populated); err != nil {
+			return nil, fmt.Errorf("failed to decode populated agent: %w", err)
+		}
+		if populated.ID.IsZero() {
+			return nil, ErrAgentNotFound
+		}
+		if populated.ResolvedInstructions == nil {
+			populated.ResolvedInstructions = []models.Instruction{}
+		}
+		if populated.ResolvedTools == nil {
+			populated.ResolvedTools = []models.Tool{}
+		}
+		return &populated, nil
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error aggregating agent with instructions: %w", err)
+	}
+	return nil, ErrConciergeNotFound
 }
 
 // ListByConciergeID retrieves all Agent subdocuments from a Concierge.
@@ -298,6 +366,80 @@ func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID b
 
 	for _, a := range existing.Agents {
 		if a.ID == agentID {
+			return nil
+		}
+	}
+	return ErrAgentNotFound
+}
+
+// AssignTool adds a tool ObjectID to an Agent's tools array idempotently.
+func (r *AgentRepository) AssignTool(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, toolID bson.ObjectID) error {
+	return r.assignReference(ctx, conciergeID, agentID, toolID, "tools")
+}
+
+// UnassignTool removes a tool ObjectID from an Agent's tools array idempotently.
+func (r *AgentRepository) UnassignTool(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, toolID bson.ObjectID) error {
+	return r.unassignReference(ctx, conciergeID, agentID, toolID, "tools")
+}
+
+func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
+	filter := bson.M{
+		"_id": conciergeID,
+		"agents": bson.M{"$elemMatch": bson.M{
+			"_id": agentID,
+			field: bson.M{"$ne": referenceID},
+		}},
+	}
+	update := bson.M{
+		"$addToSet": bson.M{"agents.$[elem]." + field: referenceID},
+		"$set":      bson.M{"updated_at": time.Now().UTC()},
+		"$inc":      bson.M{"agents.$[elem].version": 1},
+	}
+	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
+	res, err := r.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to assign %s to agent: %w", field, err)
+	}
+	if res.MatchedCount > 0 {
+		return nil
+	}
+	return r.verifyAgentExists(ctx, conciergeID, agentID)
+}
+
+func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
+	filter := bson.M{
+		"_id": conciergeID,
+		"agents": bson.M{"$elemMatch": bson.M{
+			"_id": agentID,
+			field: referenceID,
+		}},
+	}
+	update := bson.M{
+		"$pull": bson.M{"agents.$[elem]." + field: referenceID},
+		"$set":  bson.M{"updated_at": time.Now().UTC()},
+		"$inc":  bson.M{"agents.$[elem].version": 1},
+	}
+	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
+	res, err := r.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to unassign %s from agent: %w", field, err)
+	}
+	if res.MatchedCount > 0 {
+		return nil
+	}
+	return r.verifyAgentExists(ctx, conciergeID, agentID)
+}
+
+func (r *AgentRepository) verifyAgentExists(ctx context.Context, conciergeID, agentID bson.ObjectID) error {
+	var concierge models.Concierge
+	if err := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&concierge); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrConciergeNotFound
+		}
+		return fmt.Errorf("failed to verify concierge: %w", err)
+	}
+	for _, agent := range concierge.Agents {
+		if agent.ID == agentID {
 			return nil
 		}
 	}

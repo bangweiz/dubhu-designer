@@ -719,7 +719,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Agent'
+                      $ref: '#/components/schemas/AgentSummary'
         '404':
           description: Concierge not found
           content:
@@ -1012,6 +1012,88 @@ paths:
                   error:
                     type: string
                     example: "failed to unassign instruction from agent"
+
+  /concierges/{conciergeId}/agents/{agentId}/tools/{toolId}:
+    post:
+      summary: Assign a tool to an agent
+      description: Assigns an existing tool to the agent. Duplicate assignments succeed idempotently.
+      operationId: assignToolToAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c583"
+      responses:
+        '204':
+          description: Tool assigned successfully
+        '404':
+          description: Concierge, agent, or tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Unassign a tool from an agent
+      description: Removes a tool assignment from the agent. Missing assignments succeed idempotently.
+      operationId: unassignToolFromAgent
+      tags:
+        - Agents
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c582"
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c583"
+      responses:
+        '204':
+          description: Tool unassigned successfully
+        '404':
+          description: Concierge or agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -1313,9 +1395,9 @@ components:
           example: "Handles customer inquiries and routing."
         agents:
           type: array
-          description: List of resolved agents belonging to this concierge
+          description: List of agent summaries belonging to this concierge
           items:
-            $ref: '#/components/schemas/Agent'
+            $ref: '#/components/schemas/AgentSummary'
         createdAt:
           type: string
           format: date-time
@@ -1397,6 +1479,7 @@ components:
         - goal
         - model
         - instructions
+        - tools
       properties:
         id:
           type: string
@@ -1423,10 +1506,48 @@ components:
           example: "gemini-3.5-flash"
         instructions:
           type: array
-          description: List of hexadecimal MongoDB ObjectIDs of instructions assigned to this agent
+          description: List of instruction summaries assigned to this agent
           items:
-            type: string
-            example: "651da3b57f8641a27e36c580"
+            $ref: '#/components/schemas/InstructionSummary'
+        tools:
+          type: array
+          description: List of tools assigned to this agent
+          items:
+            $ref: '#/components/schemas/Tool'
+
+    AgentSummary:
+      type: object
+      required:
+        - id
+        - conciergeId
+        - name
+        - description
+        - goal
+        - model
+      properties:
+        id:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the agent
+          example: "651da3b57f8641a27e36c579"
+        conciergeId:
+          type: string
+          description: Hexadecimal MongoDB ObjectID of the parent concierge
+          example: "651da3b57f8641a27e36c581"
+        name:
+          type: string
+          example: "research_assistant"
+        description:
+          type: string
+          example: "Conducts deep literature research and analysis."
+        goal:
+          type: string
+          example: "Summarize research papers and extract key insights."
+        model:
+          type: string
+          enum:
+            - "gemini-3.5-flash"
+            - "gemini-3.5-flash-lite"
+          example: "gemini-3.5-flash"
 
     FieldError:
       type: object
