@@ -36,10 +36,12 @@ func IsValidAgentModel(model string) bool {
 
 // Agent represents an embedded subdocument within a Concierge.
 type Agent struct {
-	ID          bson.ObjectID `bson:"_id" json:"id"`
-	ConciergeID bson.ObjectID `bson:"concierge_id,omitempty" json:"conciergeId,omitempty"`
-	Name        string        `bson:"name" json:"name"`
-	Description string        `bson:"description" json:"description"`
-	Model       Model         `bson:"model" json:"model"`
-	Version     int           `bson:"version" json:"version"`
+	ID           bson.ObjectID   `bson:"_id" json:"id"`
+	ConciergeID  bson.ObjectID   `bson:"concierge_id,omitempty" json:"conciergeId,omitempty"`
+	Name         string          `bson:"name" json:"name"`
+	Description  string          `bson:"description" json:"description"`
+	Goal         string          `bson:"goal" json:"goal"`
+	Model        Model           `bson:"model" json:"model"`
+	Instructions []bson.ObjectID `bson:"instructions" json:"instructions"`
+	Version      int             `bson:"version" json:"-"`
 }

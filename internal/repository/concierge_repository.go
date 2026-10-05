@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
@@ -12,11 +11,6 @@ import (
 )
 
 const collectionConcierges = "concierges"
-
-var (
-	ErrConciergeNameExists = errors.New("concierge name already exists")
-	ErrConciergeNotFound   = errors.New("concierge not found")
-)
 
 // ConciergeRepository manages Concierge persistence in MongoDB.
 type ConciergeRepository struct {

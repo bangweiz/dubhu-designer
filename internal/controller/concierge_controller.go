@@ -1,11 +1,9 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
-	"github.com/bangweiz/dubhu-designer/internal/repository"
 	"github.com/bangweiz/dubhu-designer/internal/service"
 	"github.com/bangweiz/dubhu-designer/internal/validator"
 	"github.com/gin-gonic/gin"
@@ -56,22 +54,7 @@ func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 
 	resp, err := c.conciergeService.CreateConcierge(ctx.Request.Context(), req)
 	if err != nil {
-		if errors.Is(err, repository.ErrConciergeNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "concierge name already exists",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
@@ -84,9 +67,7 @@ func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 func (c *ConciergeController) ListConcierges(ctx *gin.Context) {
 	concierges, err := c.conciergeService.ListConcierges(ctx.Request.Context())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
@@ -101,15 +82,7 @@ func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 
 	resp, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrConciergeNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Concierge not found",
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 

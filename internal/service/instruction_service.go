@@ -4,30 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/mapper"
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"github.com/bangweiz/dubhu-designer/internal/repository"
 	"github.com/bangweiz/dubhu-designer/internal/service/util"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
-
-var (
-	ErrInstructionNotFound        = errors.New("instruction not found")
-	ErrInstructionVersionConflict = errors.New("version conflict: instruction was modified by another operation")
-)
-
-// ErrReferencedToolsNotFound is returned when tools referenced in instruction content do not exist in the database.
-type ErrReferencedToolsNotFound struct {
-	ToolIDs []string
-}
-
-func (e *ErrReferencedToolsNotFound) Error() string {
-	return fmt.Sprintf("referenced tools do not exist: %s", strings.Join(e.ToolIDs, ", "))
-}
 
 // InstructionService handles business logic operations for instructions.
 type InstructionService struct {
@@ -108,6 +94,9 @@ func (s *InstructionService) CreateInstruction(ctx context.Context, input dto.Cr
 	entity := mapper.ToInitialInstructionEntity(input, toolIDs)
 	created, err := s.instructionRepo.Create(ctx, entity)
 	if err != nil {
+		if errors.Is(err, repository.ErrInstructionNameExists) {
+			return nil, ErrInstructionNameExists
+		}
 		return nil, err
 	}
 
@@ -146,10 +135,15 @@ func (s *InstructionService) ListInstructions(ctx context.Context) ([]dto.Instru
 
 // UpdateInstruction updates an existing instruction with optimistic concurrency control.
 // Returns the updated instruction with fully populated tools.
-func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string, input dto.UpdateInstructionDTO) (*dto.InstructionResponseDTO, error) {
+func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string, ifMatch string, input dto.UpdateInstructionDTO) (*dto.InstructionResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrInstructionNotFound
+	}
+
+	expectedVersion, err := etag.Parse(ifMatch)
+	if err != nil {
+		return nil, ErrInstructionETagMismatch
 	}
 
 	toolIDs, tools, err := s.resolveTools(ctx, input.Content)
@@ -164,14 +158,17 @@ func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string
 		"updated_at": time.Now().UTC(),
 	}
 
-	updated, err := s.instructionRepo.Update(ctx, objectID, input.Version, updateDoc)
+	updated, err := s.instructionRepo.Update(ctx, objectID, expectedVersion, updateDoc)
 	if err != nil {
 		if errors.Is(err, repository.ErrInstructionConflict) {
 			existing, getErr := s.instructionRepo.GetByID(ctx, objectID)
 			if getErr == nil && existing == nil {
 				return nil, ErrInstructionNotFound
 			}
-			return nil, ErrInstructionVersionConflict
+			return nil, ErrInstructionETagMismatch
+		}
+		if errors.Is(err, repository.ErrInstructionNameExists) {
+			return nil, ErrInstructionNameExists
 		}
 		return nil, err
 	}

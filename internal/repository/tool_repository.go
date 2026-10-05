@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
@@ -12,11 +11,6 @@ import (
 )
 
 const collectionTools = "tools"
-
-var (
-	ErrToolNameExists  = errors.New("tool name already exists")
-	ErrVersionConflict = errors.New("version conflict")
-)
 
 // ToolRepository manages Tool persistence in MongoDB.
 type ToolRepository struct {

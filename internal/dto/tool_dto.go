@@ -43,13 +43,11 @@ func (d *CreateToolDTO) Trim() {
 }
 
 // UpdateToolDTO represents the request payload for updating an existing tool.
-// Version is required for optimistic concurrency control.
 type UpdateToolDTO struct {
 	Name        string          `json:"name" binding:"required"`
 	Description string          `json:"description" binding:"required"`
 	Inputs      []ToolInputDTO  `json:"inputs"`
 	Outputs     []ToolOutputDTO `json:"outputs"`
-	Version     int             `json:"version" binding:"required"`
 }
 
 // Trim trims leading and trailing whitespace from all string fields in UpdateToolDTO.
@@ -89,7 +87,7 @@ type ToolResponseDTO struct {
 	Description string                  `json:"description"`
 	Inputs      []ToolInputResponseDTO  `json:"inputs"`
 	Outputs     []ToolOutputResponseDTO `json:"outputs"`
-	Version     int                     `json:"version"`
+	Version     int                     `json:"-"`
 	CreatedAt   time.Time               `json:"createdAt"`
 	UpdatedAt   time.Time               `json:"updatedAt"`
 }

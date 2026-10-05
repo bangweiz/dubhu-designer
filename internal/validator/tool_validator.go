@@ -87,14 +87,6 @@ func ValidateUpdateTool(req *dto.UpdateToolDTO) ValidationErrors {
 		errs = append(errs, *err)
 	}
 
-	if req.Version <= 0 {
-		errs = append(errs, FieldError{
-			Field:  "version",
-			Reason: "version must be a positive number greater than 0",
-			Value:  req.Version,
-		})
-	}
-
 	errs = append(errs, validateToolInputs(req.Inputs)...)
 	errs = append(errs, validateToolOutputs(req.Outputs)...)
 

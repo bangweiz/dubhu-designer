@@ -27,7 +27,7 @@ type ConciergeSummaryResponseDTO struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Version     int       `json:"version"`
+	Version     int       `json:"-"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
@@ -38,7 +38,7 @@ type ConciergeResponseDTO struct {
 	Name        string             `json:"name"`
 	Description string             `json:"description"`
 	Agents      []AgentResponseDTO `json:"agents"`
-	Version     int                `json:"version"`
+	Version     int                `json:"-"`
 	CreatedAt   time.Time          `json:"createdAt"`
 	UpdatedAt   time.Time          `json:"updatedAt"`
 }

@@ -34,14 +34,6 @@ func ValidateUpdateInstruction(req *dto.UpdateInstructionDTO) ValidationErrors {
 		errs = append(errs, *err)
 	}
 
-	if req.Version <= 0 {
-		errs = append(errs, FieldError{
-			Field:  "version",
-			Reason: "version must be a positive number greater than 0",
-			Value:  req.Version,
-		})
-	}
-
 	if len(errs) == 0 {
 		return nil
 	}

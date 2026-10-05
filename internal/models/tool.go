@@ -26,7 +26,7 @@ type Tool struct {
 	Description string        `bson:"description" json:"description"`
 	Inputs      []ToolInput   `bson:"inputs" json:"inputs"`
 	Outputs     []ToolOutput  `bson:"outputs" json:"outputs"`
-	Version     int           `bson:"version" json:"version"`
+	Version     int           `bson:"version" json:"-"`
 	CreatedAt   time.Time     `bson:"created_at" json:"createdAt"`
 	UpdatedAt   time.Time     `bson:"updated_at" json:"updatedAt"`
 }

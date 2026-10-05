@@ -11,6 +11,7 @@ import (
 const (
 	maxNameLength        = 200
 	maxDescriptionLength = 2000
+	maxGoalLength        = 2000
 	maxContentLength     = 100000 // reasonable upper bound for LLM instructions
 )
 
@@ -70,6 +71,25 @@ func validateDescription(field, value string) *FieldError {
 	return nil
 }
 
+// validateGoal validates that a pre-trimmed goal is non-empty and does not exceed maxGoalLength.
+func validateGoal(field, value string) *FieldError {
+	if value == "" {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s is required and cannot be blank", field),
+			Value:  value,
+		}
+	}
+	if utf8.RuneCountInString(value) > maxGoalLength {
+		return &FieldError{
+			Field:  field,
+			Reason: fmt.Sprintf("%s cannot exceed %d characters", field, maxGoalLength),
+			Value:  value,
+		}
+	}
+	return nil
+}
+
 // validateContent validates that pre-trimmed content is non-empty.
 func validateContent(field, value string) *FieldError {
 	if value == "" {
@@ -108,4 +128,3 @@ func validateModel(field, value string) *FieldError {
 	}
 	return nil
 }
-

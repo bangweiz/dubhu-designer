@@ -1,11 +1,10 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
-	"github.com/bangweiz/dubhu-designer/internal/repository"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/service"
 	"github.com/bangweiz/dubhu-designer/internal/validator"
 	"github.com/gin-gonic/gin"
@@ -57,32 +56,11 @@ func (c *InstructionController) CreateInstruction(ctx *gin.Context) {
 
 	resp, err := c.instructionService.CreateInstruction(ctx.Request.Context(), req)
 	if err != nil {
-		if errors.Is(err, repository.ErrInstructionNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "instruction name already exists",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		var refErr *service.ErrReferencedToolsNotFound
-		if errors.As(err, &refErr) {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": refErr.Error(),
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
@@ -92,9 +70,7 @@ func (c *InstructionController) CreateInstruction(ctx *gin.Context) {
 func (c *InstructionController) ListInstructions(ctx *gin.Context) {
 	instructions, err := c.instructionService.ListInstructions(ctx.Request.Context())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
@@ -109,18 +85,11 @@ func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 
 	resp, err := c.instructionService.GetInstructionByID(ctx.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrInstructionNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Instruction not found",
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err)
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
@@ -129,6 +98,11 @@ func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 // UpdateInstruction handles PUT /api/v1/instructions/:instructionId
 func (c *InstructionController) UpdateInstruction(ctx *gin.Context) {
 	id := ctx.Param("instructionId")
+	ifMatch := ctx.GetHeader("If-Match")
+	if ifMatch == "" {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
+		return
+	}
 
 	var req dto.UpdateInstructionDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -149,53 +123,13 @@ func (c *InstructionController) UpdateInstruction(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := c.instructionService.UpdateInstruction(ctx.Request.Context(), id, req)
+	resp, err := c.instructionService.UpdateInstruction(ctx.Request.Context(), id, ifMatch, req)
 	if err != nil {
-		if errors.Is(err, service.ErrInstructionNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "Instruction not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrInstructionVersionConflict) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "version",
-						Reason: "instruction was modified by another operation (version mismatch)",
-						Value:  req.Version,
-					},
-				},
-			})
-			return
-		}
-		if errors.Is(err, repository.ErrInstructionNameExists) {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "Conflict",
-				"details": []validator.FieldError{
-					{
-						Field:  "name",
-						Reason: "instruction name already exists",
-						Value:  req.Name,
-					},
-				},
-			})
-			return
-		}
-		var refErr *service.ErrReferencedToolsNotFound
-		if errors.As(err, &refErr) {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": refErr.Error(),
-			})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
