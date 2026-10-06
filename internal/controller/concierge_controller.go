@@ -2,10 +2,10 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
+	"github.com/bangweiz/dubhu-designer/internal/etag"
 	"github.com/bangweiz/dubhu-designer/internal/service"
 	"github.com/bangweiz/dubhu-designer/internal/validator"
 	"github.com/gin-gonic/gin"
@@ -30,23 +30,41 @@ func (c *ConciergeController) RegisterRoutes(rg *gin.RouterGroup) {
 		concierges.POST("", c.CreateConcierge)
 		concierges.GET("", c.ListConcierges)
 		concierges.GET("/:conciergeId", c.GetConciergeByID)
+		concierges.PUT("/:conciergeId", c.UpdateConcierge)
 		concierges.GET("/:conciergeId/concierge-versions/:conciergeVersionId", c.GetConciergeVersion)
 	}
 	rg.POST("/concierge/:conciergeAction", c.SaveConcierge)
 }
 
+func (c *ConciergeController) UpdateConcierge(ctx *gin.Context) {
+	ifMatch := ctx.GetHeader("If-Match")
+	if ifMatch == "" {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
+		return
+	}
+	var req dto.UpdateConciergeDTO
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+	req.Trim()
+	if errs := validator.ValidateCreateConcierge(&req); len(errs) > 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
+		return
+	}
+	resp, err := c.conciergeService.UpdateConcierge(ctx.Request.Context(), ctx.Param("conciergeId"), ifMatch, req)
+	if err != nil {
+		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
+		return
+	}
+	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
 // GetConciergeVersion retrieves the working version or a saved snapshot.
 func (c *ConciergeController) GetConciergeVersion(ctx *gin.Context) {
 	versionID := ctx.Param("conciergeVersionId")
-	if versionID == "live" {
-		response, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), ctx.Param("conciergeId"))
-		if err != nil {
-			writeServiceError(ctx, err)
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"data": response})
-		return
-	}
+
 	saved, err := c.conciergeService.GetConciergeVersion(ctx.Request.Context(), ctx.Param("conciergeId"), versionID)
 	if err != nil {
 		writeServiceError(ctx, err)
@@ -97,6 +115,7 @@ func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
@@ -118,29 +137,6 @@ func (c *ConciergeController) ListConcierges(ctx *gin.Context) {
 // GetConciergeByID handles GET /api/v1/concierges/:conciergeId
 func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 	id := ctx.Param("conciergeId")
-	if versionParam := ctx.Query("version"); versionParam != "" {
-		version, err := strconv.Atoi(versionParam)
-		if err != nil || version < 1 {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "version must be a positive integer"})
-			return
-		}
-		live, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), id)
-		if err != nil {
-			writeServiceError(ctx, err)
-			return
-		}
-		if live.Version == version {
-			ctx.JSON(http.StatusOK, gin.H{"data": live})
-			return
-		}
-		saved, err := c.conciergeService.GetSavedConcierge(ctx.Request.Context(), id, version)
-		if err != nil {
-			writeServiceError(ctx, err)
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"data": saved})
-		return
-	}
 
 	resp, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), id)
 	if err != nil {
@@ -148,6 +144,7 @@ func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 		return
 	}
 
+	ctx.Header("ETag", etag.Format(resp.Version))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})

@@ -14,28 +14,33 @@ import (
 
 // AgentService handles business logic operations for agents.
 type AgentService struct {
-	agentRepo          *repository.AgentRepository
-	conciergeRepo      *repository.ConciergeRepository
-	instructionRepo    *repository.InstructionRepository
-	toolRepo           *repository.ToolRepository
-	savedConciergeRepo *repository.SavedConciergeRepository
+	agentRepo            *repository.AgentRepository
+	conciergeVersionRepo *repository.DraftConciergeVersionRepository
+	instructionRepo      *repository.InstructionRepository
+	toolRepo             *repository.ToolRepository
+	savedConciergeRepo   *repository.SavedConciergeVersionRepository
 }
 
 // NewAgentService creates a new AgentService instance.
-func NewAgentService(agentRepo *repository.AgentRepository, conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, savedConciergeRepo *repository.SavedConciergeRepository) *AgentService {
+func NewAgentService(agentRepo *repository.AgentRepository, conciergeVersionRepo *repository.DraftConciergeVersionRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *AgentService {
 	return &AgentService{
-		agentRepo:          agentRepo,
-		conciergeRepo:      conciergeRepo,
-		instructionRepo:    instructionRepo,
-		toolRepo:           toolRepo,
-		savedConciergeRepo: savedConciergeRepo,
+		agentRepo:            agentRepo,
+		conciergeVersionRepo: conciergeVersionRepo,
+		instructionRepo:      instructionRepo,
+		toolRepo:             toolRepo,
+		savedConciergeRepo:   savedConciergeRepo,
 	}
 }
 
 // CreateAgent validates concierge existence, maps DTO to a new Agent entity (version 1),
 // atomically appends it to the concierge's embedded agents array, and returns the mapped AgentResponseDTO.
 func (s *AgentService) CreateAgent(ctx context.Context, conciergeVersionID string, conciergeIDStr string, input dto.CreateAgentDTO) (*dto.AgentResponseDTO, error) {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return nil, err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return nil, ErrConciergeVersionImmutable
 	}
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
@@ -43,7 +48,7 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeVersionID strin
 		return nil, ErrConciergeNotFound
 	}
 
-	concierge, err := s.conciergeRepo.GetByID(ctx, conciergeID)
+	concierge, err := s.conciergeVersionRepo.GetByConciergeID(ctx, conciergeID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +77,12 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeVersionID strin
 // Returns ErrConciergeNotFound if concierge does not exist.
 // Returns ErrAgentNotFound if agent does not exist or does not belong to the concierge.
 func (s *AgentService) GetAgentByID(ctx context.Context, conciergeVersionID string, conciergeIDStr string, agentIDStr string) (*dto.AgentResponseDTO, error) {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return nil, err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		saved, err := s.getSavedVersion(ctx, conciergeIDStr, conciergeVersionID)
 		if err != nil {
 			return nil, err
@@ -117,7 +127,12 @@ func (s *AgentService) GetAgentByID(ctx context.Context, conciergeVersionID stri
 
 // ListAgents retrieves agent summaries for a given concierge without assigned instructions.
 func (s *AgentService) ListAgents(ctx context.Context, conciergeVersionID string, conciergeIDStr string) ([]dto.AgentSummaryResponseDTO, error) {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return nil, err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		saved, err := s.getSavedVersion(ctx, conciergeIDStr, conciergeVersionID)
 		if err != nil {
 			return nil, err
@@ -132,7 +147,7 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeVersionID string
 		return nil, ErrConciergeNotFound
 	}
 
-	concierge, err := s.conciergeRepo.GetByID(ctx, conciergeID)
+	concierge, err := s.conciergeVersionRepo.GetByConciergeID(ctx, conciergeID)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +172,12 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeVersionID string
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
 // Returns ErrAgentNameExists if an agent with the same name already exists in this concierge.
 func (s *AgentService) UpdateAgent(ctx context.Context, conciergeVersionID string, conciergeIDStr string, agentIDStr string, ifMatch string, input dto.UpdateAgentDTO) (*dto.AgentResponseDTO, error) {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return nil, err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return nil, ErrConciergeVersionImmutable
 	}
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
@@ -215,7 +235,12 @@ func (s *AgentService) UpdateAgent(ctx context.Context, conciergeVersionID strin
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
 // Returns ErrInstructionNotFound if instruction ID is invalid or instruction does not exist.
 func (s *AgentService) AssignInstruction(ctx context.Context, conciergeVersionID string, conciergeIDStr string, agentIDStr string, instructionIDStr string) error {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return ErrConciergeVersionImmutable
 	}
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
@@ -260,7 +285,12 @@ func (s *AgentService) AssignInstruction(ctx context.Context, conciergeVersionID
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
 // Returns ErrInstructionNotFound if instruction ID is invalid.
 func (s *AgentService) UnassignInstruction(ctx context.Context, conciergeVersionID string, conciergeIDStr string, agentIDStr string, instructionIDStr string) error {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return ErrConciergeVersionImmutable
 	}
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
@@ -294,7 +324,12 @@ func (s *AgentService) UnassignInstruction(ctx context.Context, conciergeVersion
 
 // AssignTool assigns an existing tool to an agent within a concierge.
 func (s *AgentService) AssignTool(ctx context.Context, conciergeVersionID string, conciergeIDStr, agentIDStr, toolIDStr string) error {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return ErrConciergeVersionImmutable
 	}
 	conciergeID, agentID, toolID, err := parseAgentReferenceIDs(conciergeIDStr, agentIDStr, toolIDStr, ErrToolNotFound)
@@ -315,7 +350,12 @@ func (s *AgentService) AssignTool(ctx context.Context, conciergeVersionID string
 
 // UnassignTool removes a tool assignment from an agent idempotently.
 func (s *AgentService) UnassignTool(ctx context.Context, conciergeVersionID string, conciergeIDStr, agentIDStr, toolIDStr string) error {
-	if conciergeVersionID != "live" {
+	resolvedVersion, err := s.resolveVersion(ctx, conciergeIDStr, conciergeVersionID)
+	if err != nil {
+		return err
+	}
+	conciergeVersionID = resolvedVersion
+	if conciergeVersionID != "draft" {
 		return ErrConciergeVersionImmutable
 	}
 	conciergeID, agentID, toolID, err := parseAgentReferenceIDs(conciergeIDStr, agentIDStr, toolIDStr, ErrToolNotFound)
@@ -352,7 +392,7 @@ func translateAgentReferenceError(err error) error {
 	}
 }
 
-func (s *AgentService) getSavedVersion(ctx context.Context, conciergeIDStr, versionIDStr string) (*models.SavedConcierge, error) {
+func (s *AgentService) getSavedVersion(ctx context.Context, conciergeIDStr, versionIDStr string) (*models.SavedConciergeVersion, error) {
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return nil, ErrConciergeNotFound
@@ -369,4 +409,25 @@ func (s *AgentService) getSavedVersion(ctx context.Context, conciergeIDStr, vers
 		return nil, ErrConciergeVersionNotFound
 	}
 	return saved, nil
+}
+
+func (s *AgentService) resolveVersion(ctx context.Context, parentID, versionID string) (string, error) {
+	if versionID == "draft" {
+		return "draft", nil
+	}
+	id, err := bson.ObjectIDFromHex(parentID)
+	if err != nil {
+		return "", ErrConciergeNotFound
+	}
+	if _, err := bson.ObjectIDFromHex(versionID); err != nil {
+		return "", ErrConciergeVersionNotFound
+	}
+	draft, err := s.conciergeVersionRepo.GetByConciergeID(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	if draft != nil && draft.ID.Hex() == versionID {
+		return "draft", nil
+	}
+	return versionID, nil
 }

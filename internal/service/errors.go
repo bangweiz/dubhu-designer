@@ -13,6 +13,7 @@ var (
 	ErrConciergeVersionNotFound  = errors.New("concierge version not found")
 	ErrConciergeNotFound         = errors.New("concierge not found")
 	ErrConciergeNameExists       = errors.New("concierge name already exists")
+	ErrConciergeETagMismatch     = errors.New("concierge etag does not match current representation")
 
 	ErrAgentNotFound     = errors.New("agent not found")
 	ErrAgentNameExists   = errors.New("agent name already exists")
