@@ -115,6 +115,26 @@ func (r *InstructionRepository) List(ctx context.Context) ([]models.Instruction,
 	return list, nil
 }
 
+// FindByIDs retrieves all instructions matching the supplied IDs.
+func (r *InstructionRepository) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]models.Instruction, error) {
+	if len(ids) == 0 {
+		return []models.Instruction{}, nil
+	}
+	cursor, err := r.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query instructions by IDs: %w", err)
+	}
+	defer cursor.Close(ctx)
+	var instructions []models.Instruction
+	if err := cursor.All(ctx, &instructions); err != nil {
+		return nil, fmt.Errorf("failed to decode instructions: %w", err)
+	}
+	if instructions == nil {
+		instructions = []models.Instruction{}
+	}
+	return instructions, nil
+}
+
 // Update updates an existing Instruction document using optimistic concurrency control.
 // Matches by _id and version. On success, increments version and returns the updated document.
 func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, expectedVersion int, updateDoc bson.M) (*models.Instruction, error) {

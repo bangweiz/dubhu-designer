@@ -24,6 +24,10 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 
 	var referencedToolsErr *service.ErrReferencedToolsNotFound
 	switch {
+	case errors.Is(err, service.ErrConciergeVersionImmutable):
+		ctx.JSON(http.StatusConflict, gin.H{"error": "Saved concierge versions are immutable"})
+	case errors.Is(err, service.ErrConciergeVersionNotFound):
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Concierge version not found"})
 	case errors.Is(err, service.ErrConciergeNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Concierge not found"})
 	case errors.Is(err, service.ErrAgentNotFound):

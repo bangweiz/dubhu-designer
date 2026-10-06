@@ -176,13 +176,38 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
-							"host": ["{{baseUrl}}"],
-							"path": ["concierges", ":conciergeId", "agents", ":agentId", "tools", ":toolId"],
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
+								"agents",
+								":agentId",
+								"tools",
+								":toolId"
+							],
 							"variable": [
-								{"key": "conciergeId", "value": "{{conciergeId}}"},
-								{"key": "agentId", "value": "{{agentId}}"},
-								{"key": "toolId", "value": "{{toolId}}"}
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}"
+								},
+								{
+									"key": "toolId",
+									"value": "{{toolId}}"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
+								}
 							]
 						},
 						"description": "Assigns an existing tool to an agent idempotently."
@@ -195,13 +220,38 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
-							"host": ["{{baseUrl}}"],
-							"path": ["concierges", ":conciergeId", "agents", ":agentId", "tools", ":toolId"],
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
+								"agents",
+								":agentId",
+								"tools",
+								":toolId"
+							],
 							"variable": [
-								{"key": "conciergeId", "value": "{{conciergeId}}"},
-								{"key": "agentId", "value": "{{agentId}}"},
-								{"key": "toolId", "value": "{{toolId}}"}
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}"
+								},
+								{
+									"key": "agentId",
+									"value": "{{agentId}}"
+								},
+								{
+									"key": "toolId",
+									"value": "{{toolId}}"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
+								}
 							]
 						},
 						"description": "Removes a tool assignment from an agent idempotently."
@@ -469,7 +519,62 @@
 								}
 							]
 						},
-						"description": "Retrieves a specific concierge specification by its hexadecimal MongoDB ObjectID."
+						"description": "Retrieves the live concierge, or an immutable saved version when the `version` query parameter is supplied."
+					},
+					"response": []
+				},
+				{
+					"name": "Save Concierge",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierge/:conciergeId:save",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierge",
+								":conciergeId:save"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}"
+								}
+							]
+						},
+						"description": "Saves the current customer-facing version as an immutable snapshot, then advances the live concierge to the next version."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Concierge Version",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"concierges",
+								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId"
+							],
+							"variable": [
+								{
+									"key": "conciergeId",
+									"value": "{{conciergeId}}"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}"
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -517,13 +622,15 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents"
 							],
 							"variable": [
@@ -531,6 +638,11 @@
 									"key": "conciergeId",
 									"value": "{{conciergeId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -544,13 +656,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents"
 							],
 							"variable": [
@@ -558,6 +672,11 @@
 									"key": "conciergeId",
 									"value": "{{conciergeId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -584,13 +703,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents",
 								":agentId"
 							],
@@ -604,6 +725,11 @@
 									"key": "agentId",
 									"value": "{{agentId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -648,13 +774,15 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents",
 								":agentId"
 							],
@@ -668,6 +796,11 @@
 									"key": "agentId",
 									"value": "{{agentId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the agent"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -681,13 +814,15 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"instructions",
@@ -708,6 +843,11 @@
 									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -721,13 +861,15 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"concierges",
 								":conciergeId",
+								"concierge-versions",
+								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"instructions",
@@ -748,6 +890,11 @@
 									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
+								},
+								{
+									"key": "conciergeVersionId",
+									"value": "{{conciergeVersionId}}",
+									"description": "live or a saved snapshot ObjectID"
 								}
 							]
 						},
@@ -797,6 +944,11 @@
 		{
 			"key": "instructionEtag",
 			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "conciergeVersionId",
+			"value": "live",
 			"type": "string"
 		}
 	]

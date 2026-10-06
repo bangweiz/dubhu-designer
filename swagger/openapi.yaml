@@ -578,6 +578,13 @@ paths:
           schema:
             type: string
             example: "651da3b57f8641a27e36c579"
+        - name: version
+          in: query
+          required: false
+          description: Customer-facing version. The current version returns the live concierge; an earlier saved version returns its immutable snapshot.
+          schema:
+            type: integer
+            minimum: 1
       responses:
         '200':
           description: Concierge retrieved successfully
@@ -587,7 +594,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Concierge'
+                    oneOf:
+                      - $ref: '#/components/schemas/Concierge'
+                      - $ref: '#/components/schemas/SavedConcierge'
         '404':
           description: Concierge not found
           content:
@@ -609,7 +618,45 @@ paths:
                     type: string
                     example: "failed to find concierge"
 
-  /concierges/{conciergeId}/agents:
+  /concierge/{conciergeId}:save:
+    post:
+      summary: Save an immutable concierge snapshot
+      description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the live concierge to the next version.
+      operationId: saveConcierge
+      tags:
+        - Concierges
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          description: Hexadecimal MongoDB ObjectID of the live concierge
+          schema:
+            type: string
+            example: "651da3b57f8641a27e36c579"
+      responses:
+        '201':
+          description: Concierge snapshot saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SavedConcierge'
+        '404':
+          description: Concierge or an associated resource was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
     post:
       summary: Create a new agent
       description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge.
@@ -617,6 +664,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -701,6 +755,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -741,7 +802,7 @@ paths:
                     type: string
                     example: "failed to query agents"
 
-  /concierges/{conciergeId}/agents/{agentId}:
+  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
     get:
       summary: Get agent by ID
       description: Retrieves a specific agent by its MongoDB ObjectID under the specified concierge.
@@ -749,6 +810,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -805,6 +873,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -909,7 +984,7 @@ paths:
                     type: string
                     example: "failed to update agent"
 
-  /concierges/{conciergeId}/agents/{agentId}/instructions/{instructionId}:
+  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
     post:
       summary: Assign an instruction to an agent
       description: Assigns an existing instruction specification to the agent. Validates that the concierge, agent, and instruction exist. Duplicate assignments are handled idempotently.
@@ -917,6 +992,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -939,6 +1021,12 @@ paths:
             type: string
             example: "651da3b57f8641a27e36c580"
       responses:
+        '409':
+          description: Saved concierge versions are immutable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '204':
           description: Instruction assigned successfully
         '404':
@@ -968,6 +1056,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -990,6 +1085,12 @@ paths:
             type: string
             example: "651da3b57f8641a27e36c580"
       responses:
+        '409':
+          description: Saved concierge versions are immutable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '204':
           description: Instruction unassigned successfully
         '404':
@@ -1013,7 +1114,7 @@ paths:
                     type: string
                     example: "failed to unassign instruction from agent"
 
-  /concierges/{conciergeId}/agents/{agentId}/tools/{toolId}:
+  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
     post:
       summary: Assign a tool to an agent
       description: Assigns an existing tool to the agent. Duplicate assignments succeed idempotently.
@@ -1021,6 +1122,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -1040,6 +1148,12 @@ paths:
             type: string
             example: "651da3b57f8641a27e36c583"
       responses:
+        '409':
+          description: Saved concierge versions are immutable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '204':
           description: Tool assigned successfully
         '404':
@@ -1061,6 +1175,13 @@ paths:
       tags:
         - Agents
       parameters:
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          schema:
+            type: string
+            example: live
         - name: conciergeId
           in: path
           required: true
@@ -1080,6 +1201,12 @@ paths:
             type: string
             example: "651da3b57f8641a27e36c583"
       responses:
+        '409':
+          description: Saved concierge versions are immutable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '204':
           description: Tool unassigned successfully
         '404':
@@ -1094,6 +1221,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
+    get:
+      summary: Get a concierge version
+      operationId: getConciergeVersion
+      tags:
+        - Concierges
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: conciergeVersionId
+          in: path
+          required: true
+          description: live or a saved snapshot ObjectID
+          schema:
+            type: string
+            example: live
+      responses:
+        '200':
+          description: Working concierge or immutable snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/Concierge'
+                      - $ref: '#/components/schemas/SavedConcierge'
+        '404':
+          description: Concierge version not found
 
 components:
   schemas:
@@ -1351,6 +1512,7 @@ components:
         - id
         - name
         - description
+        - version
         - createdAt
         - updatedAt
       properties:
@@ -1364,6 +1526,10 @@ components:
         description:
           type: string
           example: "Handles customer inquiries and routing."
+        version:
+          type: integer
+          description: Current customer-facing working version; saving snapshots this version and advances the live concierge
+          example: 2
         createdAt:
           type: string
           format: date-time
@@ -1380,6 +1546,7 @@ components:
         - name
         - description
         - agents
+        - version
         - createdAt
         - updatedAt
       properties:
@@ -1398,6 +1565,10 @@ components:
           description: List of agent summaries belonging to this concierge
           items:
             $ref: '#/components/schemas/AgentSummary'
+        version:
+          type: integer
+          description: Current customer-facing working version; saving snapshots this version and advances the live concierge
+          example: 2
         createdAt:
           type: string
           format: date-time
@@ -1406,6 +1577,92 @@ components:
           type: string
           format: date-time
           example: "2026-10-04T00:00:00Z"
+
+    SavedConcierge:
+      type: object
+      required: [id, conciergeVersionId, version, name, description, agents, instructions, tools, createdAt]
+      properties:
+        conciergeVersionId:
+          type: string
+          description: Snapshot ObjectID used in version-scoped routes
+        id:
+          type: string
+          example: "651da3b57f8641a27e36c590"
+        version:
+          type: integer
+          description: Immutable customer-facing version
+          example: 2
+        name:
+          type: string
+          example: "front_desk_assistant"
+        description:
+          type: string
+          example: "Handles customer inquiries and routing."
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedAgent'
+        instructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedInstruction'
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+        createdAt:
+          type: string
+          format: date-time
+
+    SavedAgent:
+      type: object
+      required: [id, name, description, goal, model, instructions, tools, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        goal:
+          type: string
+        model:
+          type: string
+        instructions:
+          type: array
+          items:
+            type: string
+        tools:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SavedInstruction:
+      type: object
+      required: [id, name, content, tools, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        content:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     CreateAgentRequest:
       type: object
