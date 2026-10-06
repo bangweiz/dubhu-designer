@@ -1,0 +1,248 @@
+/instructions:
+  post:
+    summary: Create a new instruction
+    description: Creates a new LLM instruction. The content can reference tools using the syntax {{tool:tool_id}}. The service parses these references, verifies that all referenced tools exist in the database, and populates the instruction's tools field with their ObjectIDs. If any referenced tool does not exist, the request is rejected with a 400 Bad Request.
+    operationId: createInstruction
+    tags:
+      - Instructions
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/instructions.yaml#/CreateInstructionRequest'
+          example:
+            name: "search_and_summarize"
+            content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+    responses:
+      '201':
+        description: Instruction created successfully
+        headers:
+          ETag:
+            description: Strong ETag for the created instruction representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/instructions.yaml#/Instruction'
+      '400':
+        description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "referenced tools do not exist: 651da3b57f8641a27e36c579"
+      '409':
+        description: Conflict (instruction name already exists)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Conflict"
+              details:
+                - field: "name"
+                  reason: "instruction name already exists"
+                  value: "search_and_summarize"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to insert instruction"
+  get:
+    summary: List all instructions
+    description: Retrieves all registered instructions without sorting, filtering, or pagination.
+    operationId: listInstructions
+    tags:
+      - Instructions
+    responses:
+      '200':
+        description: List of instructions retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '../schemas/instructions.yaml#/InstructionSummary'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to query instructions"
+
+/instructions/{instructionId}/usages:
+  get:
+    summary: List instruction usages
+    description: Returns one entry per referencing agent in draft concierge versions. Saved snapshots are excluded because their instructions are independent of the current instruction. An unused instruction returns an empty array.
+    operationId: listInstructionUsages
+    tags: [Instructions]
+    parameters:
+      - name: instructionId
+        in: path
+        required: true
+        schema: {type: string}
+    responses:
+      '200':
+        description: Instruction usages ordered by concierge name, version, and agent name.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  items: {$ref: '../schemas/instructions.yaml#/InstructionUsage'}
+      '404': {description: Instruction ID is invalid or the instruction does not exist}
+      '500': {description: Internal server error}
+
+/instructions/{instructionId}:
+  get:
+    summary: Get instruction by ID
+    description: Retrieves a specific instruction by its MongoDB ObjectID.
+    operationId: getInstructionById
+    tags:
+      - Instructions
+    parameters:
+      - name: instructionId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the instruction
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    responses:
+      '200':
+        description: Instruction retrieved successfully
+        headers:
+          ETag:
+            description: Strong ETag for the current instruction representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/instructions.yaml#/Instruction'
+      '404':
+        description: Instruction not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Instruction not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to find instruction"
+  put:
+    summary: Update instruction by ID
+    description: Updates an existing instruction. Any tool references in content are resolved. Requires the strong ETag returned when the instruction was last read.
+    operationId: updateInstruction
+    tags:
+      - Instructions
+    parameters:
+      - name: instructionId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the instruction
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: If-Match
+        in: header
+        required: true
+        description: Strong ETag from the latest instruction representation
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/instructions.yaml#/UpdateInstructionRequest'
+          example:
+            name: "search_and_summarize_v2"
+            content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
+    responses:
+      '200':
+        description: Instruction updated successfully
+        headers:
+          ETag:
+            description: Strong ETag for the updated instruction representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/instructions.yaml#/Instruction'
+      '400':
+        description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "referenced tools do not exist: 651da3b57f8641a27e36c579"
+      '404':
+        description: Instruction not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Instruction not found"
+      '409':
+        description: Conflict (instruction name already exists)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '412':
+        description: The supplied If-Match ETag does not match the current instruction representation
+      '428':
+        description: If-Match header is required
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to update instruction"

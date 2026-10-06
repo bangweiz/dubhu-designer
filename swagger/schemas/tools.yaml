@@ -1,0 +1,137 @@
+ToolInput:
+  type: object
+  required:
+    - name
+    - description
+    - required
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Name of the input parameter
+      example: "url"
+    description:
+      type: string
+      maxLength: 2000
+      description: Description of the input parameter
+      example: "Target URL to send request"
+    required:
+      type: boolean
+      description: Whether the input is required
+      example: true
+
+ToolOutput:
+  type: object
+  required:
+    - name
+    - description
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Name of the output parameter
+      example: "status_code"
+    description:
+      type: string
+      maxLength: 2000
+      description: Description of the output parameter
+      example: "HTTP status code"
+
+CreateToolRequest:
+  type: object
+  required:
+    - name
+    - description
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Tool name
+      example: "http_request"
+    description:
+      type: string
+      maxLength: 2000
+      description: Tool description
+      example: "Sends an HTTP request and returns the response"
+    inputs:
+      type: array
+      description: List of tool inputs. Can be omitted, null, or empty array.
+      default: []
+      items:
+        $ref: '#/ToolInput'
+    outputs:
+      type: array
+      description: List of tool outputs. Can be omitted, null, or empty array.
+      default: []
+      items:
+        $ref: '#/ToolOutput'
+
+UpdateToolRequest:
+  type: object
+  required:
+    - name
+    - description
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Tool name
+      example: "http_request_v2"
+    description:
+      type: string
+      maxLength: 2000
+      description: Tool description
+      example: "Updated HTTP request tool with timeout"
+    inputs:
+      type: array
+      description: List of tool inputs. Can be omitted, null, or empty array.
+      default: []
+      items:
+        $ref: '#/ToolInput'
+    outputs:
+      type: array
+      description: List of tool outputs. Can be omitted, null, or empty array.
+      default: []
+      items:
+        $ref: '#/ToolOutput'
+
+Tool:
+  type: object
+  required:
+    - id
+    - name
+    - description
+    - inputs
+    - outputs
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: Hexadecimal MongoDB ObjectID
+      example: "651da3b57f8641a27e36c579"
+    name:
+      type: string
+      example: "http_request"
+    description:
+      type: string
+      example: "Sends an HTTP request and returns the response"
+    inputs:
+      type: array
+      items:
+        $ref: '#/ToolInput'
+    outputs:
+      type: array
+      items:
+        $ref: '#/ToolOutput'
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"
+
+ToolUsage:
+  $ref: './instructions.yaml#/InstructionUsage'

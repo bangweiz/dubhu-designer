@@ -1,0 +1,565 @@
+/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
+  post:
+    summary: Create a new agent
+    description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge.
+    operationId: createAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/agents.yaml#/CreateAgentRequest'
+          example:
+            name: "research_assistant"
+            description: "Conducts deep literature research and analysis."
+            goal: "Summarize research papers and extract key insights."
+            model: "gemini-3.5-flash"
+    responses:
+      '201':
+        description: Agent created successfully
+        headers:
+          ETag:
+            description: Strong ETag for the created agent representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/agents.yaml#/Agent'
+      '400':
+        description: Bad request (invalid payload or validation failure)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Validation failed"
+              details:
+                - field: "name"
+                  reason: "name is required and cannot be blank"
+                  value: ""
+      '404':
+        description: Concierge not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Concierge not found"
+      '409':
+        description: Conflict (agent name already exists for this concierge)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Conflict"
+              details:
+                - field: "name"
+                  reason: "agent name already exists for this concierge"
+                  value: "research_assistant"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to insert agent"
+  get:
+    summary: List all agents for a concierge
+    description: Retrieves a list of all agents belonging to the specified concierge.
+    operationId: listAgents
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    responses:
+      '200':
+        description: A list of agents
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '../schemas/agents.yaml#/AgentSummary'
+      '404':
+        description: Concierge not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Concierge not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to query agents"
+
+/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
+  get:
+    summary: Get agent by ID
+    description: Retrieves a specific agent by its MongoDB ObjectID under the specified concierge.
+    operationId: getAgentById
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the agent
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+    responses:
+      '200':
+        description: Agent retrieved successfully
+        headers:
+          ETag:
+            description: Strong ETag for the current agent representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/agents.yaml#/Agent'
+      '404':
+        description: Concierge or agent not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Agent not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to find agent"
+  put:
+    summary: Update agent by ID
+    description: Updates an existing agent specification under the specified concierge. Name, description, goal, and model can be updated. Requires the strong ETag returned when the agent was last read.
+    operationId: updateAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the agent
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+      - name: If-Match
+        in: header
+        required: true
+        description: Strong ETag from the latest agent representation
+        schema:
+          type: string
+          example: '"1"'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/agents.yaml#/UpdateAgentRequest'
+          example:
+            name: "research_assistant_v2"
+            description: "Updated deep literature research and analysis agent."
+            goal: "Summarize research papers, extract key insights, and generate critical evaluations."
+            model: "gemini-3.5-flash"
+    responses:
+      '200':
+        description: Agent updated successfully
+        headers:
+          ETag:
+            description: Strong ETag for the updated agent representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/agents.yaml#/Agent'
+      '400':
+        description: Bad request (invalid payload or validation failure)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Validation failed"
+              details:
+                - field: "name"
+                  reason: "name cannot exceed 200 characters"
+                  value: "..."
+      '404':
+        description: Concierge or agent not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Agent not found"
+      '409':
+        description: Conflict (agent name already exists for this concierge)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Conflict"
+              details:
+                - field: "name"
+                  reason: "agent name already exists for this concierge"
+                  value: "research_assistant"
+      '412':
+        description: The supplied If-Match ETag does not match the current agent representation
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '428':
+        description: If-Match header is required
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to update agent"
+
+/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
+  post:
+    summary: Assign an instruction to an agent
+    description: Assigns an existing instruction specification to the agent. Validates that the concierge, agent, and instruction exist. Duplicate assignments are handled idempotently.
+    operationId: assignInstructionToAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the agent
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+      - name: instructionId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the instruction
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c580"
+    responses:
+      '409':
+        description: Saved concierge versions are immutable
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '204':
+        description: Instruction assigned successfully
+      '404':
+        description: Concierge, agent, or instruction not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Instruction not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to assign instruction to agent"
+  delete:
+    summary: Unassign an instruction from an agent
+    description: Removes an instruction assignment from the agent. Validates that the concierge and agent exist. If the instruction is not assigned, the operation succeeds idempotently.
+    operationId: unassignInstructionFromAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the parent concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the agent
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+      - name: instructionId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the instruction
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c580"
+    responses:
+      '409':
+        description: Saved concierge versions are immutable
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '204':
+        description: Instruction unassigned successfully
+      '404':
+        description: Concierge, agent, or instruction not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Agent not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to unassign instruction from agent"
+
+/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
+  post:
+    summary: Assign a tool to an agent
+    description: Assigns an existing tool to the agent. Duplicate assignments succeed idempotently.
+    operationId: assignToolToAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+      - name: toolId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c583"
+    responses:
+      '409':
+        description: Saved concierge versions are immutable
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '204':
+        description: Tool assigned successfully
+      '404':
+        description: Concierge, agent, or tool not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+  delete:
+    summary: Unassign a tool from an agent
+    description: Removes a tool assignment from the agent. Missing assignments succeed idempotently.
+    operationId: unassignToolFromAgent
+    tags:
+      - Agents
+    parameters:
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
+        schema:
+          type: string
+          example: draft
+      - name: conciergeId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c582"
+      - name: toolId
+        in: path
+        required: true
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c583"
+    responses:
+      '409':
+        description: Saved concierge versions are immutable
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '204':
+        description: Tool unassigned successfully
+      '404':
+        description: Concierge or agent not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'

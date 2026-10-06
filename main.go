@@ -21,6 +21,14 @@ func main() {
 	ctx := context.Background()
 
 	// Dependency Injection: Repositories
+	variableRepo := repository.NewVariableRepository(database)
+	if err := variableRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize variable indexes: %v", err))
+	}
+	environmentRepo := repository.NewEnvironmentRepository(database)
+	if err := environmentRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize environment indexes: %v", err))
+	}
 	toolRepo := repository.NewToolRepository(database)
 	if err := toolRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize tool indexes: %v", err))
@@ -51,12 +59,16 @@ func main() {
 	}
 
 	// Dependency Injection: Services
+	variableService := service.NewVariableService(variableRepo)
+	environmentService := service.NewEnvironmentService(environmentRepo)
 	toolService := service.NewToolService(toolRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
 	conciergeService := service.NewConciergeService(conciergeRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
 	agentService := service.NewAgentService(agentRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
 
 	// Dependency Injection: Controllers
+	variableController := controller.NewVariableController(variableService)
+	environmentController := controller.NewEnvironmentController(environmentService)
 	toolController := controller.NewToolController(toolService)
 	instructionController := controller.NewInstructionController(instructionService)
 	conciergeController := controller.NewConciergeController(conciergeService)
@@ -67,6 +79,8 @@ func main() {
 
 	// API versioning group
 	apiV1 := router.Group("/api/v1")
+	variableController.RegisterRoutes(apiV1)
+	environmentController.RegisterRoutes(apiV1)
 	toolController.RegisterRoutes(apiV1)
 	instructionController.RegisterRoutes(apiV1)
 	conciergeController.RegisterRoutes(apiV1)

@@ -1,0 +1,106 @@
+CreateInstructionRequest:
+  type: object
+  required:
+    - name
+    - content
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Unique instruction name
+      example: "search_and_summarize"
+    content:
+      type: string
+      maxLength: 100000
+      description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+      example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+
+UpdateInstructionRequest:
+  type: object
+  required:
+    - name
+    - content
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Unique instruction name
+      example: "search_and_summarize_v2"
+    content:
+      type: string
+      maxLength: 100000
+      description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+      example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
+
+InstructionUsage:
+  type: object
+  required: [conciergeId, conciergeName, conciergeVersionId, version, agentId, agentName]
+  properties:
+    conciergeId: {type: string}
+    conciergeName: {type: string}
+    conciergeVersionId: {type: string}
+    version: {type: integer, minimum: 1, description: Customer-facing version number, not an optimistic-lock version}
+    agentId: {type: string}
+    agentName: {type: string}
+
+InstructionSummary:
+  type: object
+  required:
+    - id
+    - name
+    - content
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the instruction
+      example: "651da3b57f8641a27e36c579"
+    name:
+      type: string
+      example: "search_and_summarize"
+    content:
+      type: string
+      example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"
+
+Instruction:
+  type: object
+  required:
+    - id
+    - name
+    - content
+    - tools
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the instruction
+      example: "651da3b57f8641a27e36c579"
+    name:
+      type: string
+      example: "search_and_summarize"
+    content:
+      type: string
+      example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+    tools:
+      type: array
+      description: List of resolved tools referenced by this instruction
+      items:
+        $ref: './tools.yaml#/Tool'
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2026-10-03T03:50:00Z"

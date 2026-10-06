@@ -24,6 +24,18 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 
 	var referencedToolsErr *service.ErrReferencedToolsNotFound
 	switch {
+	case errors.Is(err, service.ErrVariableNotFound):
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Variable not found"})
+	case errors.Is(err, service.ErrVariableETagMismatch):
+		ctx.JSON(http.StatusPreconditionFailed, gin.H{"error": "Variable was modified; fetch the latest representation and retry"})
+	case errors.Is(err, service.ErrVariableNameExists):
+		writeNameConflict(ctx, "variable name already exists", meta.nameValue)
+	case errors.Is(err, service.ErrEnvironmentNotFound):
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Environment not found"})
+	case errors.Is(err, service.ErrEnvironmentETagMismatch):
+		ctx.JSON(http.StatusPreconditionFailed, gin.H{"error": "Environment was modified; fetch the latest representation and retry"})
+	case errors.Is(err, service.ErrEnvironmentNameExists):
+		writeNameConflict(ctx, "environment name already exists", meta.nameValue)
 	case errors.Is(err, service.ErrConciergeETagMismatch):
 		ctx.JSON(http.StatusPreconditionFailed, gin.H{"error": "Concierge was modified; fetch the latest representation and retry"})
 	case errors.Is(err, service.ErrConciergeVersionImmutable):

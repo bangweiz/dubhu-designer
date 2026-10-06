@@ -1,0 +1,268 @@
+/tools:
+  post:
+    summary: Create a new tool
+    description: Creates a new tool specification with inputs and outputs.
+    operationId: createTool
+    tags:
+      - Tools
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/tools.yaml#/CreateToolRequest'
+          example:
+            name: "http_request"
+            description: "Sends an HTTP request and returns the response"
+            inputs:
+              - name: "url"
+                description: "Target URL"
+                required: true
+              - name: "method"
+                description: "HTTP method (GET, POST, etc.)"
+                required: false
+            outputs:
+              - name: "status_code"
+                description: "HTTP status code"
+              - name: "body"
+                description: "Response body payload"
+    responses:
+      '201':
+        description: Tool created successfully
+        headers:
+          ETag:
+            description: Strong ETag for the created tool representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/tools.yaml#/Tool'
+      '400':
+        description: Bad request (invalid payload or missing required fields)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Validation failed"
+              details:
+                - field: "name"
+                  reason: "tool name cannot exceed 200 characters"
+                  value: "..."
+      '409':
+        description: Conflict (tool name already exists)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Conflict"
+              details:
+                - field: "name"
+                  reason: "tool name already exists"
+                  value: "http_request"
+  get:
+    summary: List all tools
+    description: Retrieves all registered tool specifications without sorting, filtering, or pagination.
+    operationId: listTools
+    tags:
+      - Tools
+    responses:
+      '200':
+        description: List of tools retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '../schemas/tools.yaml#/Tool'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to query tools"
+
+/tools/{toolId}/usages:
+  get:
+    summary: List tool usages
+    description: Returns one entry per draft agent that assigns this tool directly or assigns an instruction referencing the tool. Multiple reference paths to the same agent are deduplicated. Saved snapshots and unassigned instructions are excluded. An unused tool returns an empty array.
+    operationId: listToolUsages
+    tags: [Tools]
+    parameters:
+      - name: toolId
+        in: path
+        required: true
+        schema: {type: string}
+    responses:
+      '200':
+        description: Tool usages ordered by concierge name, version, and agent name.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  items: {$ref: '../schemas/tools.yaml#/ToolUsage'}
+      '404': {description: Tool ID is invalid or the tool does not exist}
+      '500': {description: Internal server error}
+
+/tools/{toolId}:
+  get:
+    summary: Get tool by ID
+    description: Retrieves a specific tool specification by its MongoDB ObjectID.
+    operationId: getToolById
+    tags:
+      - Tools
+    parameters:
+      - name: toolId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the tool
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    responses:
+      '200':
+        description: Tool retrieved successfully
+        headers:
+          ETag:
+            description: Strong ETag for the current tool representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/tools.yaml#/Tool'
+      '404':
+        description: Tool not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Tool not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to find tool: connection refused"
+  put:
+    summary: Update tool by ID
+    description: Updates an existing tool specification. Requires the strong ETag returned when the tool was last read.
+    operationId: updateTool
+    tags:
+      - Tools
+    parameters:
+      - name: toolId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the tool
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+      - name: If-Match
+        in: header
+        required: true
+        description: Strong ETag from the latest tool representation
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/tools.yaml#/UpdateToolRequest'
+          example:
+            name: "http_request_v2"
+            description: "Updated HTTP request tool with timeout"
+            inputs:
+              - name: "url"
+                description: "Target URL"
+                required: true
+              - name: "timeout"
+                description: "Request timeout in seconds"
+                required: false
+            outputs:
+              - name: "status_code"
+                description: "HTTP response status code"
+    responses:
+      '200':
+        description: Tool updated successfully
+        headers:
+          ETag:
+            description: Strong ETag for the updated tool representation
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/tools.yaml#/Tool'
+      '400':
+        description: Bad request (invalid payload or validation failure)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Validation failed"
+              details:
+                - field: "name"
+                  reason: "tool name cannot exceed 200 characters"
+                  value: "..."
+      '404':
+        description: Tool not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Tool not found"
+      '409':
+        description: Conflict (tool name already exists)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '412':
+        description: The supplied If-Match ETag does not match the current tool representation
+      '428':
+        description: If-Match header is required
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to update tool"
