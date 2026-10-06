@@ -1,0 +1,141 @@
+CreateAgentRequest:
+  type: object
+  required:
+    - name
+    - description
+    - goal
+    - model
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Unique agent name
+      example: "research_assistant"
+    description:
+      type: string
+      maxLength: 2000
+      description: Purpose and capabilities of the agent
+      example: "Conducts deep literature research and analysis."
+    goal:
+      type: string
+      maxLength: 2000
+      description: Primary objective or mission of the agent
+      example: "Summarize research papers and extract key insights."
+    model:
+      type: string
+      enum:
+        - "gemini-3.5-flash"
+        - "gemini-3.5-flash-lite"
+      description: Supported foundation model identifier
+      example: "gemini-3.5-flash"
+
+UpdateAgentRequest:
+  type: object
+  required:
+    - name
+    - description
+    - goal
+    - model
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Unique agent name within the concierge
+      example: "research_assistant_v2"
+    description:
+      type: string
+      maxLength: 2000
+      description: Purpose and capabilities of the agent
+      example: "Updated deep literature research and analysis agent."
+    goal:
+      type: string
+      maxLength: 2000
+      description: Primary objective or mission of the agent
+      example: "Summarize research papers, extract key insights, and generate critical evaluations."
+    model:
+      type: string
+      enum:
+        - "gemini-3.5-flash"
+        - "gemini-3.5-flash-lite"
+      description: Supported foundation model identifier
+      example: "gemini-3.5-flash"
+
+Agent:
+  type: object
+  required:
+    - id
+    - conciergeId
+    - name
+    - description
+    - goal
+    - model
+    - instructions
+    - tools
+  properties:
+    id:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the agent
+      example: "651da3b57f8641a27e36c579"
+    conciergeId:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the parent concierge
+      example: "651da3b57f8641a27e36c581"
+    name:
+      type: string
+      example: "research_assistant"
+    description:
+      type: string
+      example: "Conducts deep literature research and analysis."
+    goal:
+      type: string
+      example: "Summarize research papers and extract key insights."
+    model:
+      type: string
+      enum:
+        - "gemini-3.5-flash"
+        - "gemini-3.5-flash-lite"
+      example: "gemini-3.5-flash"
+    instructions:
+      type: array
+      description: List of instruction summaries assigned to this agent
+      items:
+        $ref: './instructions.yaml#/InstructionSummary'
+    tools:
+      type: array
+      description: List of tools assigned to this agent
+      items:
+        $ref: './tools.yaml#/Tool'
+
+AgentSummary:
+  type: object
+  required:
+    - id
+    - conciergeId
+    - name
+    - description
+    - goal
+    - model
+  properties:
+    id:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the agent
+      example: "651da3b57f8641a27e36c579"
+    conciergeId:
+      type: string
+      description: Hexadecimal MongoDB ObjectID of the parent concierge
+      example: "651da3b57f8641a27e36c581"
+    name:
+      type: string
+      example: "research_assistant"
+    description:
+      type: string
+      example: "Conducts deep literature research and analysis."
+    goal:
+      type: string
+      example: "Summarize research papers and extract key insights."
+    model:
+      type: string
+      enum:
+        - "gemini-3.5-flash"
+        - "gemini-3.5-flash-lite"
+      example: "gemini-3.5-flash"

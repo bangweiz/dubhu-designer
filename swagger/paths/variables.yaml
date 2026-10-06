@@ -1,0 +1,99 @@
+/variables:
+  post:
+    summary: Create a variable
+    operationId: createVariable
+    tags: [Variables]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
+    responses:
+      '201':
+        description: Variable created
+        headers:
+          ETag:
+            description: Strong optimistic-lock ETag for subsequent updates.
+            schema: {type: string, example: '"1"'}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/variables.yaml#/Variable'}
+      '400': {description: Invalid request body or validation failed}
+      '409': {description: Variable name already exists}
+      '500': {description: Internal server error}
+  get:
+    summary: List variables
+    operationId: listVariables
+    tags: [Variables]
+    responses:
+      '200':
+        description: Variables ordered by name. Empty list is returned as an array.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items: {$ref: '../schemas/variables.yaml#/Variable'}
+      '500': {description: Internal server error}
+
+/variables/{variableId}:
+  parameters:
+    - name: variableId
+      in: path
+      required: true
+      schema: {type: string}
+  get:
+    summary: Get variable and its current ETag
+    operationId: getVariableById
+    tags: [Variables]
+    responses:
+      '200':
+        description: Variable retrieved
+        headers:
+          ETag:
+            schema: {type: string}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/variables.yaml#/Variable'}
+      '404': {description: Variable not found}
+      '500': {description: Internal server error}
+  put:
+    summary: Update variable name and description
+    operationId: updateVariable
+    tags: [Variables]
+    parameters:
+      - name: If-Match
+        in: header
+        required: true
+        schema: {type: string, example: '"1"'}
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
+    responses:
+      '200':
+        description: Variable updated
+        headers:
+          ETag:
+            schema: {type: string}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/variables.yaml#/Variable'}
+      '400': {description: Invalid request body or validation failed}
+      '404': {description: Variable not found}
+      '409': {description: Variable name already exists}
+      '412': {description: Invalid or stale ETag}
+      '428': {description: If-Match header required}
+      '500': {description: Internal server error}

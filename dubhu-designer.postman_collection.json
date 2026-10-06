@@ -7,6 +7,82 @@
 	},
 	"item": [
 		{
+			"name": "Variables",
+			"item": [
+				{
+					"name": "Create Variable",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('variableId', pm.response.json().data.id); pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Staging variable\"\n}", "options": {"raw": {"language": "json"}}},
+						"url": "{{baseUrl}}/variables"
+					},
+					"response": []
+				},
+				{
+					"name": "List Variables",
+					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/variables"},
+					"response": []
+				},
+				{
+					"name": "Get Variable by ID",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/variables/{{variableId}}"},
+					"response": []
+				},
+				{
+					"name": "Update Variable",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "If-Match", "value": "{{variableEtag}}"}],
+						"body": {"mode": "raw", "raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Updated customer_name variable\"\n}", "options": {"raw": {"language": "json"}}},
+						"url": "{{baseUrl}}/variables/{{variableId}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Environments",
+			"item": [
+				{
+					"name": "Create Environment",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('environmentId', pm.response.json().data.id); pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Staging environment\"\n}", "options": {"raw": {"language": "json"}}},
+						"url": "{{baseUrl}}/environments"
+					},
+					"response": []
+				},
+				{
+					"name": "List Environments",
+					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/environments"},
+					"response": []
+				},
+				{
+					"name": "Get Environment by ID",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/environments/{{environmentId}}"},
+					"response": []
+				},
+				{
+					"name": "Update Environment",
+					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "If-Match", "value": "{{environmentEtag}}"}],
+						"body": {"mode": "raw", "raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Updated staging environment\"\n}", "options": {"raw": {"language": "json"}}},
+						"url": "{{baseUrl}}/environments/{{environmentId}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Tools",
 			"description": "Endpoints for creating, listing, retrieving, and updating tool specifications.",
 			"item": [
@@ -936,6 +1012,10 @@
 		}
 	],
 	"variable": [
+  {"key": "variableId", "value": "", "type": "string"},
+  {"key": "variableEtag", "value": "", "type": "string"},
+		{"key": "environmentId", "value": "", "type": "string"},
+		{"key": "environmentEtag", "value": "", "type": "string"},
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:8080/api/v1",

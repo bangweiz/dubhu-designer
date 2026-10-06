@@ -1,0 +1,16 @@
+VariableRequest:
+  type: object
+  required: [name, description]
+  properties:
+    name: {type: string, minLength: 1, maxLength: 200, example: customer_name}
+    description: {type: string, minLength: 1, maxLength: 2000, example: Customer name variable}
+
+Variable:
+  type: object
+  required: [id, name, description, createdAt, updatedAt]
+  properties:
+    id: {type: string}
+    name: {type: string}
+    description: {type: string}
+    createdAt: {type: string, format: date-time}
+    updatedAt: {type: string, format: date-time}

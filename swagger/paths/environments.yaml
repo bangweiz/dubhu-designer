@@ -1,0 +1,99 @@
+/environments:
+  post:
+    summary: Create an environment
+    operationId: createEnvironment
+    tags: [Environments]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/environments.yaml#/EnvironmentRequest'}
+    responses:
+      '201':
+        description: Environment created
+        headers:
+          ETag:
+            description: Strong optimistic-lock ETag for subsequent updates.
+            schema: {type: string, example: '"1"'}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/environments.yaml#/Environment'}
+      '400': {description: Invalid request body or validation failed}
+      '409': {description: Environment name already exists}
+      '500': {description: Internal server error}
+  get:
+    summary: List environments
+    operationId: listEnvironments
+    tags: [Environments]
+    responses:
+      '200':
+        description: Environments ordered by name. Empty list is returned as an array.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items: {$ref: '../schemas/environments.yaml#/Environment'}
+      '500': {description: Internal server error}
+
+/environments/{environmentId}:
+  parameters:
+    - name: environmentId
+      in: path
+      required: true
+      schema: {type: string}
+  get:
+    summary: Get environment and its current ETag
+    operationId: getEnvironmentById
+    tags: [Environments]
+    responses:
+      '200':
+        description: Environment retrieved
+        headers:
+          ETag:
+            schema: {type: string}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/environments.yaml#/Environment'}
+      '404': {description: Environment not found}
+      '500': {description: Internal server error}
+  put:
+    summary: Update environment name and description
+    operationId: updateEnvironment
+    tags: [Environments]
+    parameters:
+      - name: If-Match
+        in: header
+        required: true
+        schema: {type: string, example: '"1"'}
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/environments.yaml#/EnvironmentRequest'}
+    responses:
+      '200':
+        description: Environment updated
+        headers:
+          ETag:
+            schema: {type: string}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/environments.yaml#/Environment'}
+      '400': {description: Invalid request body or validation failed}
+      '404': {description: Environment not found}
+      '409': {description: Environment name already exists}
+      '412': {description: Invalid or stale ETag}
+      '428': {description: If-Match header required}
+      '500': {description: Internal server error}

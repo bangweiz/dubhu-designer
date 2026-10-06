@@ -9,6 +9,12 @@ import (
 // Service errors form the application-level error contract consumed by the
 // transport layer. Repository-specific sentinel errors are translated to this contract.
 var (
+	ErrVariableNotFound          = errors.New("variable not found")
+	ErrVariableNameExists        = errors.New("variable name already exists")
+	ErrVariableETagMismatch      = errors.New("variable etag does not match current representation")
+	ErrEnvironmentNotFound       = errors.New("environment not found")
+	ErrEnvironmentNameExists     = errors.New("environment name already exists")
+	ErrEnvironmentETagMismatch   = errors.New("environment etag does not match current representation")
 	ErrConciergeVersionImmutable = errors.New("saved concierge versions are immutable")
 	ErrConciergeVersionNotFound  = errors.New("concierge version not found")
 	ErrConciergeNotFound         = errors.New("concierge not found")

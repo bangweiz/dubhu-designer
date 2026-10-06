@@ -1,0 +1,141 @@
+CreateConciergeRequest:
+  type: object
+  required:
+    - name
+    - description
+  properties:
+    name:
+      type: string
+      maxLength: 200
+      description: Unique concierge name
+      example: "front_desk_assistant"
+    description:
+      type: string
+      maxLength: 2000
+      description: Purpose and capabilities of the concierge
+      example: "Handles customer inquiries and routing."
+
+ConciergeSummary:
+  type: object
+  required: [id, name, description, conciergeVersions, createdAt, updatedAt]
+  properties:
+    createdAt: {type: string, format: date-time}
+    updatedAt: {type: string, format: date-time}
+    id:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    conciergeVersions:
+      type: array
+      items:
+        $ref: '#/ConciergeVersionDescriptor'
+
+Concierge:
+  type: object
+  required: [id, name, description, conciergeVersions, createdAt, updatedAt]
+  properties:
+    createdAt: {type: string, format: date-time}
+    updatedAt: {type: string, format: date-time}
+    id:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    conciergeVersions:
+      type: array
+      items:
+        $ref: '#/ConciergeVersionDescriptor'
+
+SavedConciergeVersion:
+  type: object
+  required: [id, conciergeId, version, saved, agents, instructions, tools, createdAt, updatedAt]
+  properties:
+    id:
+      type: string
+      description: Concierge version ID
+    conciergeId:
+      type: string
+    version:
+      type: integer
+    saved:
+      type: boolean
+    agents:
+      type: array
+      items:
+        $ref: '#/SavedAgent'
+    instructions:
+      type: array
+      items:
+        $ref: '#/SavedInstruction'
+    tools:
+      type: array
+      items:
+        $ref: './tools.yaml#/Tool'
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+ConciergeVersionDescriptor:
+  type: object
+  required: [conciergeVersionId, version]
+  properties:
+    conciergeVersionId:
+      type: string
+    version:
+      type: integer
+
+SavedAgent:
+  type: object
+  required: [id, name, description, goal, model, instructions, tools, createdAt, updatedAt]
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    goal:
+      type: string
+    model:
+      type: string
+    instructions:
+      type: array
+      items:
+        type: string
+    tools:
+      type: array
+      items:
+        type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+SavedInstruction:
+  type: object
+  required: [id, name, content, tools, createdAt, updatedAt]
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    content:
+      type: string
+    tools:
+      type: array
+      items:
+        type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time

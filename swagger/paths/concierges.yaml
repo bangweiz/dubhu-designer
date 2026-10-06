@@ -1,0 +1,247 @@
+/concierges:
+  post:
+    summary: Create a new concierge
+    description: Creates a new concierge specification. Requires name and description.
+    operationId: createConcierge
+    tags:
+      - Concierges
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/concierges.yaml#/CreateConciergeRequest'
+          example:
+            name: "front_desk_assistant"
+            description: "Handles customer inquiries and routing."
+    responses:
+      '201':
+        description: Concierge created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/Concierge'
+      '400':
+        description: Bad request (invalid payload or validation failure)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Validation failed"
+              details:
+                - field: "name"
+                  reason: "name is required and cannot be blank"
+                  value: ""
+      '409':
+        description: Conflict (concierge name already exists)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+            example:
+              error: "Conflict"
+              details:
+                - field: "name"
+                  reason: "concierge name already exists"
+                  value: "front_desk_assistant"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to insert concierge"
+  get:
+    summary: List all concierges
+    description: Retrieves a list of all concierges.
+    operationId: listConcierges
+    tags:
+      - Concierges
+    responses:
+      '200':
+        description: A list of concierges
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '../schemas/concierges.yaml#/ConciergeSummary'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to query concierges"
+
+/concierges/{conciergeId}:
+  put:
+    summary: Update concierge name and description
+    description: Updates only concierge metadata, independently of working and saved concierge versions.
+    operationId: updateConcierge
+    tags: [Concierges]
+    parameters:
+      - name: conciergeId
+        in: path
+        required: true
+        schema: {type: string}
+      - name: If-Match
+        in: header
+        required: true
+        description: Strong ETag returned by concierge GET or create.
+        schema: {type: string, example: '"1"'}
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, description]
+            properties:
+              name: {type: string}
+              description: {type: string}
+    responses:
+      '200':
+        description: Updated concierge
+        headers:
+          ETag:
+            schema: {type: string}
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/concierges.yaml#/Concierge'}
+      '400': {description: Invalid request body}
+      '404': {description: Concierge not found}
+      '409': {description: Concierge name already exists}
+      '412': {description: Invalid or stale ETag}
+      '428': {description: If-Match header required}
+      '500': {description: Internal server error}
+  get:
+    summary: Get concierge by ID
+    description: Retrieves a specific concierge by its MongoDB ObjectID.
+    operationId: getConciergeById
+    tags:
+      - Concierges
+    parameters:
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    responses:
+      '200':
+        description: Concierge retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/Concierge'
+      '404':
+        description: Concierge not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Concierge not found"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "failed to find concierge"
+
+/concierge/{conciergeId}:save:
+  post:
+    summary: Save an immutable concierge snapshot
+    description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the draft concierge to the next version.
+    operationId: saveConcierge
+    tags:
+      - Concierges
+    parameters:
+      - name: conciergeId
+        in: path
+        required: true
+        description: Hexadecimal MongoDB ObjectID of the draft concierge
+        schema:
+          type: string
+          example: "651da3b57f8641a27e36c579"
+    responses:
+      '201':
+        description: Concierge snapshot saved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/SavedConciergeVersion'
+      '404':
+        description: Concierge or an associated resource was not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/ErrorResponse'
+
+/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
+  get:
+    summary: Get a concierge version
+    operationId: getConciergeVersion
+    tags:
+      - Concierges
+    parameters:
+      - name: conciergeId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: conciergeVersionId
+        in: path
+        required: true
+        description: draft or a version ID returned in Concierge.conciergeVersions
+        schema:
+          type: string
+          example: draft
+    responses:
+      '200':
+        description: Working concierge or immutable snapshot
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/SavedConciergeVersion'
+      '404':
+        description: Concierge version not found
