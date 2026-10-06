@@ -206,7 +206,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -250,7 +250,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -443,6 +443,7 @@
 									"        pm.collectionVariables.set(\"conciergeId\", jsonData.data.id);",
 									"        console.log(\"Saved conciergeId:\", jsonData.data.id);",
 									"    }",
+									"    if (jsonData.data && jsonData.data.conciergeVersions) { pm.collectionVariables.set(\"conciergeVersionId\", jsonData.data.conciergeVersions[0].conciergeVersionId); }",
 									"}"
 								],
 								"type": "text/javascript"
@@ -519,7 +520,7 @@
 								}
 							]
 						},
-						"description": "Retrieves the live concierge, or an immutable saved version when the `version` query parameter is supplied."
+						"description": "Retrieves concierge identity and discoverable working/saved version IDs."
 					},
 					"response": []
 				},
@@ -544,7 +545,7 @@
 								}
 							]
 						},
-						"description": "Saves the current customer-facing version as an immutable snapshot, then advances the live concierge to the next version."
+						"description": "Saves the current working ConciergeVersion and advances its version. The returned id identifies the immutable snapshot."
 					},
 					"response": []
 				},
@@ -571,7 +572,8 @@
 								},
 								{
 									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}"
+									"value": "{{conciergeVersionId}}",
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						}
@@ -642,7 +644,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -676,7 +678,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -729,7 +731,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -800,7 +802,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -847,7 +849,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -894,7 +896,7 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "live or a saved snapshot ObjectID"
+									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -948,7 +950,7 @@
 		},
 		{
 			"key": "conciergeVersionId",
-			"value": "live",
+			"value": "draft",
 			"type": "string"
 		}
 	]
