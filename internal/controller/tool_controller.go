@@ -29,8 +29,19 @@ func (c *ToolController) RegisterRoutes(rg *gin.RouterGroup) {
 		tools.POST("", c.CreateTool)
 		tools.GET("", c.ListTools)
 		tools.GET("/:toolId", c.GetToolByID)
+		tools.GET("/:toolId/usages", c.ListToolUsages)
 		tools.PUT("/:toolId", c.UpdateTool)
 	}
+}
+
+// ListToolUsages handles GET /api/v1/tools/:toolId/usages.
+func (c *ToolController) ListToolUsages(ctx *gin.Context) {
+	usages, err := c.toolService.ListToolUsages(ctx.Request.Context(), ctx.Param("toolId"))
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 
 // CreateTool handles POST /api/v1/tools

@@ -79,6 +79,20 @@
 					"response": []
 				},
 				{
+					"name": "List Tool Usages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tools/{{toolId}}/usages",
+							"host": ["{{baseUrl}}"],
+							"path": ["tools", "{{toolId}}", "usages"]
+						},
+						"description": "Lists draft agents using the tool directly or through assigned instructions, deduplicated per agent. Excludes saved snapshots and unassigned instructions."
+					},
+					"response": []
+				},
+				{
 					"name": "Get Tool by ID",
 					"event": [
 						{
@@ -329,6 +343,20 @@
 							]
 						},
 						"description": "Retrieves summaries of all instructions in the system without embedding full tool specifications."
+					},
+					"response": []
+				},
+				{
+					"name": "List Instruction Usages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/instructions/{{instructionId}}/usages",
+							"host": ["{{baseUrl}}"],
+							"path": ["instructions", "{{instructionId}}", "usages"]
+						},
+						"description": "Lists referencing agents in draft concierge versions only. Immutable saved snapshots are excluded."
 					},
 					"response": []
 				},

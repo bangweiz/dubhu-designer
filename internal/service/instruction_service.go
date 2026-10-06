@@ -21,6 +21,25 @@ type InstructionService struct {
 	toolRepo        *repository.ToolRepository
 }
 
+func (s *InstructionService) ListInstructionUsages(ctx context.Context, idStr string) ([]dto.InstructionUsageResponseDTO, error) {
+	id, err := bson.ObjectIDFromHex(idStr)
+	if err != nil {
+		return nil, ErrInstructionNotFound
+	}
+	instruction, err := s.instructionRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if instruction == nil {
+		return nil, ErrInstructionNotFound
+	}
+	usages, err := s.instructionRepo.ListUsages(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.ToInstructionUsageResponseDTOList(usages), nil
+}
+
 // NewInstructionService creates a new InstructionService instance.
 func NewInstructionService(
 	instructionRepo *repository.InstructionRepository,

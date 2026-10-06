@@ -8,6 +8,18 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+func ToInstructionUsageResponseDTOList(usages []models.InstructionUsage) []dto.InstructionUsageResponseDTO {
+	result := make([]dto.InstructionUsageResponseDTO, 0, len(usages))
+	for _, usage := range usages {
+		result = append(result, dto.InstructionUsageResponseDTO{
+			ConciergeID: usage.ConciergeID.Hex(), ConciergeName: usage.ConciergeName,
+			ConciergeVersionID: usage.ConciergeVersionID.Hex(), Version: usage.Version,
+			AgentID: usage.AgentID.Hex(), AgentName: usage.AgentName,
+		})
+	}
+	return result
+}
+
 // ToInitialInstructionEntity converts a CreateInstructionDTO into a new Instruction entity
 // with version 1, a new ObjectID, and UTC timestamps.
 func ToInitialInstructionEntity(input dto.CreateInstructionDTO, toolIDs []bson.ObjectID) *models.Instruction {

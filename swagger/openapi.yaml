@@ -104,6 +104,32 @@ paths:
                     type: string
                     example: "failed to query tools"
 
+  /tools/{toolId}/usages:
+    get:
+      summary: List tool usages
+      description: Returns one entry per draft agent that assigns this tool directly or assigns an instruction referencing the tool. Multiple reference paths to the same agent are deduplicated. Saved snapshots and unassigned instructions are excluded. An unused tool returns an empty array.
+      operationId: listToolUsages
+      tags: [Tools]
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Tool usages ordered by concierge name, version, and agent name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/ToolUsage'}
+        '404': {description: Tool ID is invalid or the tool does not exist}
+        '500': {description: Internal server error}
+
   /tools/{toolId}:
     get:
       summary: Get tool by ID
@@ -340,6 +366,32 @@ paths:
                   error:
                     type: string
                     example: "failed to query instructions"
+
+  /instructions/{instructionId}/usages:
+    get:
+      summary: List instruction usages
+      description: Returns one entry per referencing agent in draft concierge versions. Saved snapshots are excluded because their instructions are independent of the current instruction. An unused instruction returns an empty array.
+      operationId: listInstructionUsages
+      tags: [Instructions]
+      parameters:
+        - name: instructionId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Instruction usages ordered by concierge name, version, and agent name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/InstructionUsage'}
+        '404': {description: Instruction ID is invalid or the instruction does not exist}
+        '500': {description: Internal server error}
 
   /instructions/{instructionId}:
     get:
@@ -1458,6 +1510,20 @@ components:
           maxLength: 100000
           description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
           example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
+
+    ToolUsage:
+      $ref: '#/components/schemas/InstructionUsage'
+
+    InstructionUsage:
+      type: object
+      required: [conciergeId, conciergeName, conciergeVersionId, version, agentId, agentName]
+      properties:
+        conciergeId: {type: string}
+        conciergeName: {type: string}
+        conciergeVersionId: {type: string}
+        version: {type: integer, minimum: 1, description: Customer-facing version number, not an optimistic-lock version}
+        agentId: {type: string}
+        agentName: {type: string}
 
     InstructionSummary:
       type: object

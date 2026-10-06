@@ -12,6 +12,47 @@ import (
 
 const collectionTools = "tools"
 
+// ListReferencingInstructions includes instructions even when no draft agent assigns them.
+func (r *ToolRepository) ListReferencingInstructions(ctx context.Context, id bson.ObjectID) ([]models.Instruction, error) {
+	cursor, err := r.collection.Database().Collection(collectionInstructions).Find(ctx, bson.M{"tools": id}, options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}))
+	if err != nil {
+		return nil, fmt.Errorf("find tool instruction usages: %w", err)
+	}
+	defer cursor.Close(ctx)
+	instructions := []models.Instruction{}
+	if err := cursor.All(ctx, &instructions); err != nil {
+		return nil, fmt.Errorf("decode tool instruction usages: %w", err)
+	}
+	return instructions, nil
+}
+
+// ListAgentUsages matches direct assignments and references through current instructions.
+// Matching each embedded agent once naturally deduplicates multiple paths to the same tool.
+func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, instructionIDs []bson.ObjectID) ([]models.InstructionUsage, error) {
+	filter := bson.M{"$or": bson.A{bson.M{"agents.tools": id}, bson.M{"agents.instructions": bson.M{"$in": instructionIDs}}}}
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$unwind", Value: "$agents"}},
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$project", Value: bson.M{"_id": 0, "concierge_id": 1, "concierge_version_id": "$_id", "version": 1, "agent_id": "$agents._id", "agent_name": "$agents.name"}}},
+		bson.D{{Key: "$lookup", Value: bson.M{"from": collectionConcierges, "localField": "concierge_id", "foreignField": "_id", "as": "concierge"}}},
+		bson.D{{Key: "$unwind", Value: "$concierge"}},
+		bson.D{{Key: "$set", Value: bson.M{"concierge_name": "$concierge.name"}}},
+		bson.D{{Key: "$unset", Value: "concierge"}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+	}
+	cursor, err := r.collection.Database().Collection(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate tool agent usages: %w", err)
+	}
+	defer cursor.Close(ctx)
+	usages := []models.InstructionUsage{}
+	if err := cursor.All(ctx, &usages); err != nil {
+		return nil, fmt.Errorf("decode tool agent usages: %w", err)
+	}
+	return usages, nil
+}
+
 // ToolRepository manages Tool persistence in MongoDB.
 type ToolRepository struct {
 	collection *mongo.Collection

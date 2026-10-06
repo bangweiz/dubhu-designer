@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+type InstructionUsageResponseDTO struct {
+	ConciergeID        string `json:"conciergeId"`
+	ConciergeName      string `json:"conciergeName"`
+	ConciergeVersionID string `json:"conciergeVersionId"`
+	Version            int    `json:"version"`
+	AgentID            string `json:"agentId"`
+	AgentName          string `json:"agentName"`
+}
+
 // --- Instruction Request DTOs ---
 
 // CreateInstructionDTO represents the request payload for creating an instruction.

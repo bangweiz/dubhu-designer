@@ -29,8 +29,19 @@ func (c *InstructionController) RegisterRoutes(rg *gin.RouterGroup) {
 		instructions.POST("", c.CreateInstruction)
 		instructions.GET("", c.ListInstructions)
 		instructions.GET("/:instructionId", c.GetInstructionByID)
+		instructions.GET("/:instructionId/usages", c.ListInstructionUsages)
 		instructions.PUT("/:instructionId", c.UpdateInstruction)
 	}
+}
+
+// ListInstructionUsages handles GET /api/v1/instructions/:instructionId/usages.
+func (c *InstructionController) ListInstructionUsages(ctx *gin.Context) {
+	usages, err := c.instructionService.ListInstructionUsages(ctx.Request.Context(), ctx.Param("instructionId"))
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 
 // CreateInstruction handles POST /api/v1/instructions
