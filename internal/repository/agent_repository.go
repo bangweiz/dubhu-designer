@@ -112,6 +112,8 @@ func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.Obj
 			"instructions": "$selected_agent.instructions",
 			"tools":        "$selected_agent.tools",
 			"version":      "$selected_agent.version",
+			"created_at":   "$selected_agent.created_at",
+			"updated_at":   "$selected_agent.updated_at",
 		}}},
 		bson.D{{Key: "$lookup", Value: bson.M{
 			"from":         collectionInstructions,
@@ -184,6 +186,7 @@ func (r *AgentRepository) ListByConciergeID(ctx context.Context, conciergeID bso
 // Returns ErrAgentNotFound if the agent does not exist in the concierge.
 // Returns ErrAgentNameExists if another agent in this concierge already has the new name.
 func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, expectedVersion int, agent *models.Agent) (*models.Agent, error) {
+	now := time.Now().UTC()
 	filter := bson.M{
 		"_id": conciergeID,
 		"$and": []bson.M{
@@ -207,7 +210,8 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 			"agents.$[elem].description": agent.Description,
 			"agents.$[elem].goal":        agent.Goal,
 			"agents.$[elem].model":       agent.Model,
-			"updated_at":                 time.Now().UTC(),
+			"agents.$[elem].updated_at":  now,
+			"updated_at":                 now,
 		},
 		"$inc": bson.M{
 			"agents.$[elem].version": 1,
@@ -265,6 +269,7 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 // Returns ErrConciergeNotFound if concierge does not exist.
 // Returns ErrAgentNotFound if agent does not exist in the concierge.
 func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, instructionID bson.ObjectID) error {
+	now := time.Now().UTC()
 	filter := bson.M{
 		"_id": conciergeID,
 		"agents": bson.M{
@@ -280,7 +285,8 @@ func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bso
 			"agents.$[elem].instructions": instructionID,
 		},
 		"$set": bson.M{
-			"updated_at": time.Now().UTC(),
+			"agents.$[elem].updated_at": now,
+			"updated_at":                now,
 		},
 		"$inc": bson.M{
 			"agents.$[elem].version": 1,
@@ -321,6 +327,7 @@ func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bso
 // Returns ErrConciergeNotFound if concierge does not exist.
 // Returns ErrAgentNotFound if agent does not exist in the concierge.
 func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, instructionID bson.ObjectID) error {
+	now := time.Now().UTC()
 	filter := bson.M{
 		"_id": conciergeID,
 		"agents": bson.M{
@@ -336,7 +343,8 @@ func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID b
 			"agents.$[elem].instructions": instructionID,
 		},
 		"$set": bson.M{
-			"updated_at": time.Now().UTC(),
+			"agents.$[elem].updated_at": now,
+			"updated_at":                now,
 		},
 		"$inc": bson.M{
 			"agents.$[elem].version": 1,
@@ -383,6 +391,7 @@ func (r *AgentRepository) UnassignTool(ctx context.Context, conciergeID bson.Obj
 }
 
 func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
+	now := time.Now().UTC()
 	filter := bson.M{
 		"_id": conciergeID,
 		"agents": bson.M{"$elemMatch": bson.M{
@@ -392,8 +401,11 @@ func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agen
 	}
 	update := bson.M{
 		"$addToSet": bson.M{"agents.$[elem]." + field: referenceID},
-		"$set":      bson.M{"updated_at": time.Now().UTC()},
-		"$inc":      bson.M{"agents.$[elem].version": 1},
+		"$set": bson.M{
+			"agents.$[elem].updated_at": now,
+			"updated_at":                now,
+		},
+		"$inc": bson.M{"agents.$[elem].version": 1},
 	}
 	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
 	res, err := r.collection.UpdateOne(ctx, filter, update, opts)
@@ -407,6 +419,7 @@ func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agen
 }
 
 func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
+	now := time.Now().UTC()
 	filter := bson.M{
 		"_id": conciergeID,
 		"agents": bson.M{"$elemMatch": bson.M{
@@ -416,8 +429,11 @@ func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, ag
 	}
 	update := bson.M{
 		"$pull": bson.M{"agents.$[elem]." + field: referenceID},
-		"$set":  bson.M{"updated_at": time.Now().UTC()},
-		"$inc":  bson.M{"agents.$[elem].version": 1},
+		"$set": bson.M{
+			"agents.$[elem].updated_at": now,
+			"updated_at":                now,
+		},
+		"$inc": bson.M{"agents.$[elem].version": 1},
 	}
 	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
 	res, err := r.collection.UpdateOne(ctx, filter, update, opts)

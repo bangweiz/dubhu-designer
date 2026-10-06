@@ -12,7 +12,8 @@ type Concierge struct {
 	Name        string        `bson:"name" json:"name"`
 	Description string        `bson:"description" json:"description"`
 	Agents      []Agent       `bson:"agents" json:"agents"`
-	Version     int           `bson:"version" json:"-"`
+	ETagVersion int           `bson:"version" json:"-"`
+	Version     int           `bson:"customer_version" json:"version"`
 	CreatedAt   time.Time     `bson:"created_at" json:"createdAt"`
 	UpdatedAt   time.Time     `bson:"updated_at" json:"updatedAt"`
 }

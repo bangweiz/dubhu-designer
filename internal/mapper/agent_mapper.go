@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"time"
+
 	"github.com/bangweiz/dubhu-designer/internal/dto"
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -8,6 +10,7 @@ import (
 
 // ToInitialAgentEntity converts a CreateAgentDTO and concierge ObjectID into a new Agent entity with version 1.
 func ToInitialAgentEntity(conciergeID bson.ObjectID, input dto.CreateAgentDTO) *models.Agent {
+	now := time.Now().UTC()
 	return &models.Agent{
 		ID:           bson.NewObjectID(),
 		ConciergeID:  conciergeID,
@@ -18,6 +21,8 @@ func ToInitialAgentEntity(conciergeID bson.ObjectID, input dto.CreateAgentDTO) *
 		Instructions: []bson.ObjectID{},
 		Tools:        []bson.ObjectID{},
 		Version:      1,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 }
 

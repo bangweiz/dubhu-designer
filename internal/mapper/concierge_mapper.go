@@ -17,6 +17,7 @@ func ToInitialConciergeEntity(input dto.CreateConciergeDTO) *models.Concierge {
 		Name:        input.Name,
 		Description: input.Description,
 		Agents:      []models.Agent{},
+		ETagVersion: 1,
 		Version:     1,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -38,6 +39,7 @@ func ToConciergeResponseDTO(c *models.Concierge) dto.ConciergeResponseDTO {
 		Description: c.Description,
 		Agents:      ToAgentSummaryResponseDTOList(agents),
 		Version:     c.Version,
+		ETagVersion: c.ETagVersion,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 	}
@@ -59,6 +61,7 @@ func ToConciergeSummaryResponseDTO(c *models.Concierge) dto.ConciergeSummaryResp
 		Name:        c.Name,
 		Description: c.Description,
 		Version:     c.Version,
+		ETagVersion: c.ETagVersion,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 	}

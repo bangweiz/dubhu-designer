@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -45,6 +47,8 @@ type Agent struct {
 	Instructions []bson.ObjectID `bson:"instructions" json:"instructions"`
 	Tools        []bson.ObjectID `bson:"tools" json:"tools"`
 	Version      int             `bson:"version" json:"-"`
+	CreatedAt    time.Time       `bson:"created_at" json:"createdAt"`
+	UpdatedAt    time.Time       `bson:"updated_at" json:"updatedAt"`
 }
 
 // PopulatedAgent represents an Agent with its assigned Instruction documents resolved via aggregation.

@@ -9,8 +9,10 @@ import (
 // Service errors form the application-level error contract consumed by the
 // transport layer. Repository-specific sentinel errors are translated to this contract.
 var (
-	ErrConciergeNotFound   = errors.New("concierge not found")
-	ErrConciergeNameExists = errors.New("concierge name already exists")
+	ErrConciergeVersionImmutable = errors.New("saved concierge versions are immutable")
+	ErrConciergeVersionNotFound  = errors.New("concierge version not found")
+	ErrConciergeNotFound         = errors.New("concierge not found")
+	ErrConciergeNameExists       = errors.New("concierge name already exists")
 
 	ErrAgentNotFound     = errors.New("agent not found")
 	ErrAgentNameExists   = errors.New("agent name already exists")

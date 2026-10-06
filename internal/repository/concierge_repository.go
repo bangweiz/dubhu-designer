@@ -75,6 +75,20 @@ func (r *ConciergeRepository) GetByID(ctx context.Context, id bson.ObjectID) (*m
 	return &concierge, nil
 }
 
+// IncrementVersion atomically increments the customer-facing release version.
+func (r *ConciergeRepository) IncrementVersion(ctx context.Context, id bson.ObjectID) (*models.Concierge, error) {
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var concierge models.Concierge
+	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id}, bson.M{"$inc": bson.M{"customer_version": 1}}, opts).Decode(&concierge)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrConciergeNotFound
+		}
+		return nil, fmt.Errorf("failed to increment concierge version: %w", err)
+	}
+	return &concierge, nil
+}
+
 // List retrieves all Concierge documents from MongoDB without sorting, filtering, or pagination.
 func (r *ConciergeRepository) List(ctx context.Context) ([]models.Concierge, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{})

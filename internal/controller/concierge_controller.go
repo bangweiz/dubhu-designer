@@ -2,6 +2,8 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
 	"github.com/bangweiz/dubhu-designer/internal/service"
@@ -28,7 +30,44 @@ func (c *ConciergeController) RegisterRoutes(rg *gin.RouterGroup) {
 		concierges.POST("", c.CreateConcierge)
 		concierges.GET("", c.ListConcierges)
 		concierges.GET("/:conciergeId", c.GetConciergeByID)
+		concierges.GET("/:conciergeId/concierge-versions/:conciergeVersionId", c.GetConciergeVersion)
 	}
+	rg.POST("/concierge/:conciergeAction", c.SaveConcierge)
+}
+
+// GetConciergeVersion retrieves the working version or a saved snapshot.
+func (c *ConciergeController) GetConciergeVersion(ctx *gin.Context) {
+	versionID := ctx.Param("conciergeVersionId")
+	if versionID == "live" {
+		response, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), ctx.Param("conciergeId"))
+		if err != nil {
+			writeServiceError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"data": response})
+		return
+	}
+	saved, err := c.conciergeService.GetConciergeVersion(ctx.Request.Context(), ctx.Param("conciergeId"), versionID)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": saved})
+}
+
+// SaveConcierge handles POST /api/v1/concierge/:conciergeId:save.
+func (c *ConciergeController) SaveConcierge(ctx *gin.Context) {
+	conciergeID, ok := strings.CutSuffix(ctx.Param("conciergeAction"), ":save")
+	if !ok || conciergeID == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	saved, err := c.conciergeService.SaveConcierge(ctx.Request.Context(), conciergeID)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, gin.H{"data": saved})
 }
 
 // CreateConcierge handles POST /api/v1/concierges
@@ -79,6 +118,29 @@ func (c *ConciergeController) ListConcierges(ctx *gin.Context) {
 // GetConciergeByID handles GET /api/v1/concierges/:conciergeId
 func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 	id := ctx.Param("conciergeId")
+	if versionParam := ctx.Query("version"); versionParam != "" {
+		version, err := strconv.Atoi(versionParam)
+		if err != nil || version < 1 {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "version must be a positive integer"})
+			return
+		}
+		live, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), id)
+		if err != nil {
+			writeServiceError(ctx, err)
+			return
+		}
+		if live.Version == version {
+			ctx.JSON(http.StatusOK, gin.H{"data": live})
+			return
+		}
+		saved, err := c.conciergeService.GetSavedConcierge(ctx.Request.Context(), id, version)
+		if err != nil {
+			writeServiceError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"data": saved})
+		return
+	}
 
 	resp, err := c.conciergeService.GetConciergeByID(ctx.Request.Context(), id)
 	if err != nil {
