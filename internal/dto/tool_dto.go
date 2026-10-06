@@ -7,6 +7,8 @@ import (
 
 // --- Request DTOs ---
 
+type ToolUsageResponseDTO = InstructionUsageResponseDTO
+
 // ToolInputDTO represents an input parameter in create or update requests.
 type ToolInputDTO struct {
 	Name        string `json:"name" binding:"required"`

@@ -20,7 +20,11 @@ func NewDraftConciergeVersionRepository(db *mongo.Database) *DraftConciergeVersi
 	return &DraftConciergeVersionRepository{collection: db.Collection(collectionDraftConciergeVersions)}
 }
 func (r *DraftConciergeVersionRepository) InitIndexes(ctx context.Context) error {
-	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "concierge_id", Value: 1}}, Options: options.Index().SetUnique(true)})
+	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{Keys: bson.D{{Key: "concierge_id", Value: 1}}, Options: options.Index().SetUnique(true)},
+		{Keys: bson.D{{Key: "agents.instructions", Value: 1}}},
+		{Keys: bson.D{{Key: "agents.tools", Value: 1}}},
+	})
 	return err
 }
 func (r *DraftConciergeVersionRepository) Create(ctx context.Context, v *models.DraftConciergeVersion) error {

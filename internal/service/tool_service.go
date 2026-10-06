@@ -17,6 +17,33 @@ type ToolService struct {
 	toolRepo *repository.ToolRepository
 }
 
+func (s *ToolService) ListToolUsages(ctx context.Context, idStr string) ([]dto.ToolUsageResponseDTO, error) {
+	id, err := bson.ObjectIDFromHex(idStr)
+	if err != nil {
+		return nil, ErrToolNotFound
+	}
+	tool, err := s.toolRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if tool == nil {
+		return nil, ErrToolNotFound
+	}
+	instructions, err := s.toolRepo.ListReferencingInstructions(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]bson.ObjectID, 0, len(instructions))
+	for _, instruction := range instructions {
+		ids = append(ids, instruction.ID)
+	}
+	agents, err := s.toolRepo.ListAgentUsages(ctx, id, ids)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.ToInstructionUsageResponseDTOList(agents), nil
+}
+
 // NewToolService creates a new ToolService instance.
 func NewToolService(toolRepo *repository.ToolRepository) *ToolService {
 	return &ToolService{

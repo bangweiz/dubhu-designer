@@ -12,6 +12,34 @@ import (
 
 const collectionInstructions = "instructions"
 
+// ListUsages reads current instruction references from drafts, excluding immutable snapshots.
+func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID) ([]models.InstructionUsage, error) {
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.M{"agents.instructions": id}}},
+		bson.D{{Key: "$unwind", Value: "$agents"}},
+		bson.D{{Key: "$match", Value: bson.M{"agents.instructions": id}}},
+		bson.D{{Key: "$project", Value: bson.M{
+			"_id": 0, "concierge_id": 1, "concierge_version_id": "$_id", "version": 1,
+			"agent_id": "$agents._id", "agent_name": "$agents.name",
+		}}},
+		bson.D{{Key: "$lookup", Value: bson.M{"from": collectionConcierges, "localField": "concierge_id", "foreignField": "_id", "as": "concierge"}}},
+		bson.D{{Key: "$unwind", Value: "$concierge"}},
+		bson.D{{Key: "$set", Value: bson.M{"concierge_name": "$concierge.name"}}},
+		bson.D{{Key: "$unset", Value: "concierge"}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+	}
+	cursor, err := r.collection.Database().Collection(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate instruction usages: %w", err)
+	}
+	defer cursor.Close(ctx)
+	usages := []models.InstructionUsage{}
+	if err := cursor.All(ctx, &usages); err != nil {
+		return nil, fmt.Errorf("decode instruction usages: %w", err)
+	}
+	return usages, nil
+}
+
 // InstructionRepository manages Instruction persistence in MongoDB.
 type InstructionRepository struct {
 	collection *mongo.Collection
@@ -32,7 +60,7 @@ func (r *InstructionRepository) InitIndexes(ctx context.Context) error {
 		Options: options.Index().SetUnique(true),
 	}
 
-	if _, err := r.collection.Indexes().CreateOne(ctx, indexModel); err != nil {
+	if _, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{indexModel, {Keys: bson.D{{Key: "tools", Value: 1}}}}); err != nil {
 		return fmt.Errorf("failed to create index on instructions collection: %w", err)
 	}
 	return nil
