@@ -6,13 +6,13 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// SavedConcierge is an immutable, self-contained customer-facing concierge snapshot.
-type SavedConcierge struct {
-	ID           bson.ObjectID `bson:"_id,omitempty" json:"conciergeVersionId"`
-	ConciergeID  bson.ObjectID `bson:"concierge_id" json:"id"`
+// SavedConciergeVersion is an immutable, self-contained customer-facing concierge snapshot.
+type SavedConciergeVersion struct {
+	ID           bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	ConciergeID  bson.ObjectID `bson:"concierge_id" json:"conciergeId"`
+	Saved        bool          `bson:"saved" json:"saved"`
+	UpdatedAt    time.Time     `bson:"updated_at" json:"updatedAt"`
 	Version      int           `bson:"version" json:"version"`
-	Name         string        `bson:"name" json:"name"`
-	Description  string        `bson:"description" json:"description"`
 	Agents       []Agent       `bson:"agents" json:"agents"`
 	Instructions []Instruction `bson:"instructions" json:"instructions"`
 	Tools        []Tool        `bson:"tools" json:"tools"`

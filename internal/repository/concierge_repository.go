@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -11,6 +12,43 @@ import (
 )
 
 const collectionConcierges = "concierges"
+
+// RecordSavedVersion replaces the old draft reference with its snapshot and appends the advanced draft.
+// The caller must run this alongside snapshot creation and draft advancement in one transaction.
+func (r *ConciergeRepository) RecordSavedVersion(ctx context.Context, id, draftID, savedID bson.ObjectID, version int) error {
+	refs := "$concierge_versions"
+	replacement := bson.M{"concierge_version_id": savedID, "version": version}
+	draft := models.ConciergeVersionReference{ConciergeVersionID: draftID, Version: version + 1}
+	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": id, "concierge_versions": bson.M{"$elemMatch": bson.M{"concierge_version_id": draftID, "version": version}}}, mongo.Pipeline{bson.D{{Key: "$set", Value: bson.M{
+		"concierge_versions": bson.M{"$concatArrays": bson.A{
+			bson.M{"$map": bson.M{"input": refs, "as": "ref", "in": bson.M{"$cond": bson.A{bson.M{"$eq": bson.A{"$$ref.concierge_version_id", draftID}}, replacement, "$$ref"}}}},
+			bson.A{draft},
+		}},
+		"version": bson.M{"$add": bson.A{"$version", 1}}, "updated_at": time.Now().UTC(),
+	}}}})
+	if err != nil {
+		return fmt.Errorf("record saved concierge version: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return ErrVersionConflict
+	}
+	return nil
+}
+
+func (r *ConciergeRepository) Update(ctx context.Context, id bson.ObjectID, version int, name, description string) (*models.Concierge, error) {
+	var c models.Concierge
+	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id, "version": version}, bson.M{"$set": bson.M{"name": name, "description": description, "updated_at": time.Now().UTC()}, "$inc": bson.M{"version": 1}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&c)
+	if err == mongo.ErrNoDocuments {
+		return nil, ErrVersionConflict
+	}
+	if mongo.IsDuplicateKeyError(err) {
+		return nil, ErrConciergeNameExists
+	}
+	if err != nil {
+		return nil, fmt.Errorf("update concierge: %w", err)
+	}
+	return &c, nil
+}
 
 // ConciergeRepository manages Concierge persistence in MongoDB.
 type ConciergeRepository struct {
@@ -26,15 +64,11 @@ func NewConciergeRepository(database *mongo.Database) *ConciergeRepository {
 
 // InitIndexes creates necessary database indexes for concierges:
 // 1. Unique index on name.
-// 2. Multikey index on agents._id for subdocument lookups.
 func (r *ConciergeRepository) InitIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
 			Keys:    bson.D{{Key: "name", Value: 1}},
 			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys: bson.D{{Key: "agents._id", Value: 1}},
 		},
 	}
 
@@ -47,9 +81,7 @@ func (r *ConciergeRepository) InitIndexes(ctx context.Context) error {
 // Create inserts a Concierge document into MongoDB.
 // Returns ErrConciergeNameExists if a concierge with the same name already exists.
 func (r *ConciergeRepository) Create(ctx context.Context, concierge *models.Concierge) (*models.Concierge, error) {
-	if concierge.Agents == nil {
-		concierge.Agents = []models.Agent{}
-	}
+
 	if _, err := r.collection.InsertOne(ctx, concierge); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrConciergeNameExists
@@ -69,23 +101,7 @@ func (r *ConciergeRepository) GetByID(ctx context.Context, id bson.ObjectID) (*m
 		}
 		return nil, fmt.Errorf("failed to find concierge: %w", err)
 	}
-	if concierge.Agents == nil {
-		concierge.Agents = []models.Agent{}
-	}
-	return &concierge, nil
-}
 
-// IncrementVersion atomically increments the customer-facing release version.
-func (r *ConciergeRepository) IncrementVersion(ctx context.Context, id bson.ObjectID) (*models.Concierge, error) {
-	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var concierge models.Concierge
-	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id}, bson.M{"$inc": bson.M{"customer_version": 1}}, opts).Decode(&concierge)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, ErrConciergeNotFound
-		}
-		return nil, fmt.Errorf("failed to increment concierge version: %w", err)
-	}
 	return &concierge, nil
 }
 
@@ -104,11 +120,6 @@ func (r *ConciergeRepository) List(ctx context.Context) ([]models.Concierge, err
 
 	if list == nil {
 		list = []models.Concierge{}
-	}
-	for i := range list {
-		if list[i].Agents == nil {
-			list[i].Agents = []models.Agent{}
-		}
 	}
 	return list, nil
 }

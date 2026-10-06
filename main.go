@@ -40,16 +40,21 @@ func main() {
 	if err := agentRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize agent indexes: %v", err))
 	}
-	savedConciergeRepo := repository.NewSavedConciergeRepository(database)
+	savedConciergeRepo := repository.NewSavedConciergeVersionRepository(database)
 	if err := savedConciergeRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize saved concierge indexes: %v", err))
+	}
+
+	conciergeVersionRepo := repository.NewDraftConciergeVersionRepository(database)
+	if err := conciergeVersionRepo.InitIndexes(ctx); err != nil {
+		panic(err)
 	}
 
 	// Dependency Injection: Services
 	toolService := service.NewToolService(toolRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
-	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, savedConciergeRepo)
-	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo, toolRepo, savedConciergeRepo)
+	conciergeService := service.NewConciergeService(conciergeRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
+	agentService := service.NewAgentService(agentRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
 
 	// Dependency Injection: Controllers
 	toolController := controller.NewToolController(toolService)

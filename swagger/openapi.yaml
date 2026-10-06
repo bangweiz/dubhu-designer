@@ -564,6 +564,49 @@ paths:
                     example: "failed to query concierges"
 
   /concierges/{conciergeId}:
+    put:
+      summary: Update concierge name and description
+      description: Updates only concierge metadata, independently of working and saved concierge versions.
+      operationId: updateConcierge
+      tags: [Concierges]
+      parameters:
+        - name: conciergeId
+          in: path
+          required: true
+          schema: {type: string}
+        - name: If-Match
+          in: header
+          required: true
+          description: Strong ETag returned by concierge GET or create.
+          schema: {type: string, example: '"1"'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, description]
+              properties:
+                name: {type: string}
+                description: {type: string}
+      responses:
+        '200':
+          description: Updated concierge
+          headers:
+            ETag:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Concierge'}
+        '400': {description: Invalid request body}
+        '404': {description: Concierge not found}
+        '409': {description: Concierge name already exists}
+        '412': {description: Invalid or stale ETag}
+        '428': {description: If-Match header required}
+        '500': {description: Internal server error}
     get:
       summary: Get concierge by ID
       description: Retrieves a specific concierge by its MongoDB ObjectID.
@@ -578,13 +621,6 @@ paths:
           schema:
             type: string
             example: "651da3b57f8641a27e36c579"
-        - name: version
-          in: query
-          required: false
-          description: Customer-facing version. The current version returns the live concierge; an earlier saved version returns its immutable snapshot.
-          schema:
-            type: integer
-            minimum: 1
       responses:
         '200':
           description: Concierge retrieved successfully
@@ -594,9 +630,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    oneOf:
-                      - $ref: '#/components/schemas/Concierge'
-                      - $ref: '#/components/schemas/SavedConcierge'
+                    $ref: '#/components/schemas/Concierge'
         '404':
           description: Concierge not found
           content:
@@ -621,7 +655,7 @@ paths:
   /concierge/{conciergeId}:save:
     post:
       summary: Save an immutable concierge snapshot
-      description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the live concierge to the next version.
+      description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the draft concierge to the next version.
       operationId: saveConcierge
       tags:
         - Concierges
@@ -629,7 +663,7 @@ paths:
         - name: conciergeId
           in: path
           required: true
-          description: Hexadecimal MongoDB ObjectID of the live concierge
+          description: Hexadecimal MongoDB ObjectID of the draft concierge
           schema:
             type: string
             example: "651da3b57f8641a27e36c579"
@@ -642,7 +676,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SavedConcierge'
+                    $ref: '#/components/schemas/SavedConciergeVersion'
         '404':
           description: Concierge or an associated resource was not found
           content:
@@ -667,10 +701,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -758,10 +792,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -813,10 +847,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -876,10 +910,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -995,10 +1029,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -1059,10 +1093,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -1125,10 +1159,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -1178,10 +1212,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: Use live for the working version or a saved snapshot ObjectID. Changes are allowed only for live.
+          description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
           schema:
             type: string
-            example: live
+            example: draft
         - name: conciergeId
           in: path
           required: true
@@ -1237,10 +1271,10 @@ paths:
         - name: conciergeVersionId
           in: path
           required: true
-          description: live or a saved snapshot ObjectID
+          description: draft or a version ID returned in Concierge.conciergeVersions
           schema:
             type: string
-            example: live
+            example: draft
       responses:
         '200':
           description: Working concierge or immutable snapshot
@@ -1250,9 +1284,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    oneOf:
-                      - $ref: '#/components/schemas/Concierge'
-                      - $ref: '#/components/schemas/SavedConcierge'
+                    $ref: '#/components/schemas/SavedConciergeVersion'
         '404':
           description: Concierge version not found
 
@@ -1508,96 +1540,51 @@ components:
 
     ConciergeSummary:
       type: object
-      required:
-        - id
-        - name
-        - description
-        - version
-        - createdAt
-        - updatedAt
+      required: [id, name, description, conciergeVersions, createdAt, updatedAt]
       properties:
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
         id:
           type: string
-          description: Hexadecimal MongoDB ObjectID of the concierge
-          example: "651da3b57f8641a27e36c579"
         name:
           type: string
-          example: "front_desk_assistant"
         description:
           type: string
-          example: "Handles customer inquiries and routing."
-        version:
-          type: integer
-          description: Current customer-facing working version; saving snapshots this version and advances the live concierge
-          example: 2
-        createdAt:
-          type: string
-          format: date-time
-          example: "2026-10-04T00:00:00Z"
-        updatedAt:
-          type: string
-          format: date-time
-          example: "2026-10-04T00:00:00Z"
+        conciergeVersions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConciergeVersionDescriptor'
 
     Concierge:
       type: object
-      required:
-        - id
-        - name
-        - description
-        - agents
-        - version
-        - createdAt
-        - updatedAt
+      required: [id, name, description, conciergeVersions, createdAt, updatedAt]
       properties:
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
         id:
           type: string
-          description: Hexadecimal MongoDB ObjectID of the concierge
-          example: "651da3b57f8641a27e36c579"
         name:
           type: string
-          example: "front_desk_assistant"
         description:
           type: string
-          example: "Handles customer inquiries and routing."
-        agents:
+        conciergeVersions:
           type: array
-          description: List of agent summaries belonging to this concierge
           items:
-            $ref: '#/components/schemas/AgentSummary'
-        version:
-          type: integer
-          description: Current customer-facing working version; saving snapshots this version and advances the live concierge
-          example: 2
-        createdAt:
-          type: string
-          format: date-time
-          example: "2026-10-04T00:00:00Z"
-        updatedAt:
-          type: string
-          format: date-time
-          example: "2026-10-04T00:00:00Z"
+            $ref: '#/components/schemas/ConciergeVersionDescriptor'
 
-    SavedConcierge:
+    SavedConciergeVersion:
       type: object
-      required: [id, conciergeVersionId, version, name, description, agents, instructions, tools, createdAt]
+      required: [id, conciergeId, version, saved, agents, instructions, tools, createdAt, updatedAt]
       properties:
-        conciergeVersionId:
-          type: string
-          description: Snapshot ObjectID used in version-scoped routes
         id:
           type: string
-          example: "651da3b57f8641a27e36c590"
+          description: Concierge version ID
+        conciergeId:
+          type: string
         version:
           type: integer
-          description: Immutable customer-facing version
-          example: 2
-        name:
-          type: string
-          example: "front_desk_assistant"
-        description:
-          type: string
-          example: "Handles customer inquiries and routing."
+        saved:
+          type: boolean
         agents:
           type: array
           items:
@@ -1613,6 +1600,18 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConciergeVersionDescriptor:
+      type: object
+      required: [conciergeVersionId, version]
+      properties:
+        conciergeVersionId:
+          type: string
+        version:
+          type: integer
 
     SavedAgent:
       type: object

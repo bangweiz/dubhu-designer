@@ -108,10 +108,6 @@ func (c *AgentController) GetAgentByID(ctx *gin.Context) {
 
 // UpdateAgent handles PUT /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
 func (c *AgentController) UpdateAgent(ctx *gin.Context) {
-	if ctx.Param("conciergeVersionId") != "live" {
-		writeServiceError(ctx, service.ErrConciergeVersionImmutable)
-		return
-	}
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
 	ifMatch := ctx.GetHeader("If-Match")
