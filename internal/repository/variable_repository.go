@@ -13,14 +13,14 @@ import (
 
 const collectionVariables = "variables"
 
-type VariableRepository struct{ collection *mongo.Collection }
+type VariableRepository struct{ collection *scopedCollection }
 
 func NewVariableRepository(db *mongo.Database) *VariableRepository {
-	return &VariableRepository{collection: db.Collection(collectionVariables)}
+	return &VariableRepository{collection: newScopedCollection(db, collectionVariables)}
 }
 
 func (r *VariableRepository) InitIndexes(ctx context.Context) error {
-	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "name", Value: 1}}, Options: options.Index().SetUnique(true)})
+	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}}, Options: options.Index().SetUnique(true)})
 	if err != nil {
 		return fmt.Errorf("create variable indexes: %w", err)
 	}

@@ -1,4 +1,6 @@
-/concierges:
+/organisations/{organisationId}/concierges:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new concierge
     description: Creates a new concierge specification. Requires name and description.
@@ -15,6 +17,8 @@
             name: "front_desk_assistant"
             description: "Handles customer inquiries and routing."
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Concierge created successfully
         content:
@@ -65,6 +69,8 @@
     tags:
       - Concierges
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: A list of concierges
         content:
@@ -87,7 +93,9 @@
                   type: string
                   example: "failed to query concierges"
 
-/concierges/{conciergeId}:
+/organisations/{organisationId}/concierges/{conciergeId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   put:
     summary: Update concierge name and description
     description: Updates only concierge metadata, independently of working and saved concierge versions.
@@ -114,6 +122,8 @@
               name: {type: string}
               description: {type: string}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Updated concierge
         headers:
@@ -146,6 +156,8 @@
           type: string
           example: "651da3b57f8641a27e36c579"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Concierge retrieved successfully
         content:
@@ -176,7 +188,9 @@
                   type: string
                   example: "failed to find concierge"
 
-/concierge/{conciergeId}:save:
+/organisations/{organisationId}/concierge/{conciergeId}:save:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Save an immutable concierge snapshot
     description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the draft concierge to the next version.
@@ -192,6 +206,8 @@
           type: string
           example: "651da3b57f8641a27e36c579"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Concierge snapshot saved successfully
         content:
@@ -214,7 +230,9 @@
             schema:
               $ref: '../schemas/common.yaml#/ErrorResponse'
 
-/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: Get a concierge version
     operationId: getConciergeVersion
@@ -234,6 +252,8 @@
           type: string
           example: draft
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Working concierge or immutable snapshot
         content:

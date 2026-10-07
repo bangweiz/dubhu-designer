@@ -77,8 +77,8 @@ func ToToolResponseDTO(tool *models.Tool) dto.ToolResponseDTO {
 		Inputs:      inputs,
 		Outputs:     outputs,
 		Version:     tool.Version,
-		CreatedAt:   tool.CreatedAt,
-		UpdatedAt:   tool.UpdatedAt,
+		CreatedBy:   auditID(tool.CreatedBy), UpdatedBy: auditID(tool.UpdatedBy), CreatedAt: tool.CreatedAt,
+		UpdatedAt: tool.UpdatedAt,
 	}
 }
 

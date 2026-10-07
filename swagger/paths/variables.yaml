@@ -1,4 +1,6 @@
-/variables:
+/organisations/{organisationId}/variables:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a variable
     operationId: createVariable
@@ -9,6 +11,8 @@
         application/json:
           schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Variable created
         headers:
@@ -29,6 +33,8 @@
     operationId: listVariables
     tags: [Variables]
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Variables ordered by name. Empty list is returned as an array.
         content:
@@ -41,8 +47,9 @@
                   items: {$ref: '../schemas/variables.yaml#/Variable'}
       '500': {description: Internal server error}
 
-/variables/{variableId}:
+/organisations/{organisationId}/variables/{variableId}:
   parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
     - name: variableId
       in: path
       required: true
@@ -52,6 +59,8 @@
     operationId: getVariableById
     tags: [Variables]
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Variable retrieved
         headers:
@@ -80,6 +89,8 @@
         application/json:
           schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Variable updated
         headers:

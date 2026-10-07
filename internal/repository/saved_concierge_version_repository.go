@@ -14,13 +14,13 @@ const collectionSavedConciergeVersions = "saved_concierge_versions"
 
 // SavedConciergeVersionRepository stores immutable concierge version snapshots.
 type SavedConciergeVersionRepository struct {
-	collection *mongo.Collection
+	collection *scopedCollection
 	client     *mongo.Client
 }
 
 func NewSavedConciergeVersionRepository(database *mongo.Database) *SavedConciergeVersionRepository {
 	return &SavedConciergeVersionRepository{
-		collection: database.Collection(collectionSavedConciergeVersions),
+		collection: newScopedCollection(database, collectionSavedConciergeVersions),
 		client:     database.Client(),
 	}
 }

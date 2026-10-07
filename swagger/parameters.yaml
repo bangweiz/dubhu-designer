@@ -1,0 +1,8 @@
+OrganisationID:
+  name: organisationId
+  in: path
+  required: true
+  description: Organisation ID returned at registration. Must match the authenticated account's organisation.
+  schema:
+    type: string
+    pattern: '^[a-fA-F0-9]{24}$'

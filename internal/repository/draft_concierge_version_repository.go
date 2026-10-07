@@ -14,10 +14,10 @@ import (
 const collectionDraftConciergeVersions = "draft_concierge_versions"
 
 // DraftConciergeVersionRepository enforces one draft per concierge with a unique concierge_id index.
-type DraftConciergeVersionRepository struct{ collection *mongo.Collection }
+type DraftConciergeVersionRepository struct{ collection *scopedCollection }
 
 func NewDraftConciergeVersionRepository(db *mongo.Database) *DraftConciergeVersionRepository {
-	return &DraftConciergeVersionRepository{collection: db.Collection(collectionDraftConciergeVersions)}
+	return &DraftConciergeVersionRepository{collection: newScopedCollection(db, collectionDraftConciergeVersions)}
 }
 func (r *DraftConciergeVersionRepository) InitIndexes(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{

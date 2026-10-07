@@ -90,6 +90,8 @@ type ToolResponseDTO struct {
 	Inputs      []ToolInputResponseDTO  `json:"inputs"`
 	Outputs     []ToolOutputResponseDTO `json:"outputs"`
 	Version     int                     `json:"-"`
+	CreatedBy   string                  `json:"createdBy"`
+	UpdatedBy   string                  `json:"updatedBy"`
 	CreatedAt   time.Time               `json:"createdAt"`
 	UpdatedAt   time.Time               `json:"updatedAt"`
 }

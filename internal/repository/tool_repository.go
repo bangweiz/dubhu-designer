@@ -14,7 +14,7 @@ const collectionTools = "tools"
 
 // ListReferencingInstructions includes instructions even when no draft agent assigns them.
 func (r *ToolRepository) ListReferencingInstructions(ctx context.Context, id bson.ObjectID) ([]models.Instruction, error) {
-	cursor, err := r.collection.Database().Collection(collectionInstructions).Find(ctx, bson.M{"tools": id}, options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}))
+	cursor, err := r.collection.sibling(collectionInstructions).Find(ctx, bson.M{"tools": id}, options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}))
 	if err != nil {
 		return nil, fmt.Errorf("find tool instruction usages: %w", err)
 	}
@@ -28,7 +28,7 @@ func (r *ToolRepository) ListReferencingInstructions(ctx context.Context, id bso
 
 // ListAgentUsages matches direct assignments and references through current instructions.
 // Matching each embedded agent once naturally deduplicates multiple paths to the same tool.
-func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, instructionIDs []bson.ObjectID) ([]models.InstructionUsage, error) {
+func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, instructionIDs []bson.ObjectID) ([]InstructionUsageResult, error) {
 	filter := bson.M{"$or": bson.A{bson.M{"agents.tools": id}, bson.M{"agents.instructions": bson.M{"$in": instructionIDs}}}}
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: filter}},
@@ -41,12 +41,12 @@ func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, 
 		bson.D{{Key: "$unset", Value: "concierge"}},
 		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
 	}
-	cursor, err := r.collection.Database().Collection(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	cursor, err := r.collection.sibling(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate tool agent usages: %w", err)
 	}
 	defer cursor.Close(ctx)
-	usages := []models.InstructionUsage{}
+	usages := []InstructionUsageResult{}
 	if err := cursor.All(ctx, &usages); err != nil {
 		return nil, fmt.Errorf("decode tool agent usages: %w", err)
 	}
@@ -55,20 +55,20 @@ func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, 
 
 // ToolRepository manages Tool persistence in MongoDB.
 type ToolRepository struct {
-	collection *mongo.Collection
+	collection *scopedCollection
 }
 
 // NewToolRepository creates a new ToolRepository instance.
 func NewToolRepository(database *mongo.Database) *ToolRepository {
 	return &ToolRepository{
-		collection: database.Collection(collectionTools),
+		collection: newScopedCollection(database, collectionTools),
 	}
 }
 
 // InitIndexes creates necessary database indexes for tools (e.g. unique index on name).
 func (r *ToolRepository) InitIndexes(ctx context.Context) error {
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "name", Value: 1}},
+		Keys:    bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}
 	if _, err := r.collection.Indexes().CreateOne(ctx, indexModel); err != nil {

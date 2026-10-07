@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bangweiz/dubhu-designer/internal/identity"
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -14,25 +15,32 @@ import (
 
 // AgentRepository manages Agent embedded subdocuments within DraftConciergeVersion documents.
 type AgentRepository struct {
-	collection *mongo.Collection
+	collection *scopedCollection
 }
 
 // NewAgentRepository creates a new AgentRepository instance pointing to the concierge_versions collection.
 func NewAgentRepository(database *mongo.Database) *AgentRepository {
 	return &AgentRepository{
-		collection: database.Collection(collectionDraftConciergeVersions),
+		collection: newScopedCollection(database, collectionDraftConciergeVersions),
 	}
 }
 
 // InitIndexes initializes any required indexes for agent operations.
 func (r *AgentRepository) InitIndexes(ctx context.Context) error {
-	return nil
+	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "agents.name", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{"agents.0": bson.M{"$exists": true}})})
+	return err
 }
 
 // Create atomically appends an Agent subdocument to a Concierge's agents array.
 // Returns ErrConciergeNotFound if the parent concierge does not exist.
 // Returns ErrAgentNameExists if an agent with the same name already exists in this concierge.
 func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID, agent *models.Agent) (*models.Agent, error) {
+	principal, ok := identity.FromContext(ctx)
+	if !ok {
+		return nil, identity.ErrMissingOrganisation
+	}
+	agent.CreatedBy = principal.AccountID
+	agent.UpdatedBy = principal.AccountID
 	filter := bson.M{
 		"concierge_id": conciergeID,
 		"agents.name":  bson.M{"$ne": agent.Name},
@@ -43,6 +51,9 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 	}
 
 	res, err := r.collection.UpdateOne(ctx, filter, update)
+	if mongo.IsDuplicateKeyError(err) {
+		return nil, ErrAgentNameExists
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert agent into concierge: %w", err)
 	}
@@ -112,6 +123,8 @@ func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.Obj
 			"instructions": "$selected_agent.instructions",
 			"tools":        "$selected_agent.tools",
 			"version":      "$selected_agent.version",
+			"created_by":   "$selected_agent.created_by",
+			"updated_by":   "$selected_agent.updated_by",
 			"created_at":   "$selected_agent.created_at",
 			"updated_at":   "$selected_agent.updated_at",
 		}}},
@@ -224,6 +237,9 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 
 	var concierge models.DraftConciergeVersion
 	err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&concierge)
+	if mongo.IsDuplicateKeyError(err) {
+		return nil, ErrAgentNameExists
+	}
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			var existing models.DraftConciergeVersion

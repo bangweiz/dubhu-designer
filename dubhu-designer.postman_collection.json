@@ -2,43 +2,242 @@
 	"info": {
 		"_postman_id": "e9c8951a-2fd0-4eeb-89e4-bdfc96c6702f",
 		"name": "Dubhu Designer",
-		"description": "Postman collection for Dubhu Designer API, covering Tool and Instruction management endpoints. Instructions reference tools using the `{{tool:tool_id}}` syntax.",
+		"description": "Organisation-scoped Dubhu Designer API. Register an organisation/root account, log in, and use its bearer token. Root/admin may write; all roles may read; account creation is root-only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Create Organisation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) { pm.collectionVariables.set('organisationId', pm.response.json().data.organisation.id); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"example_company\",\n  \"description\": \"Example company\",\n  \"rootAccount\": {\n    \"name\": \"Root\",\n    \"email\": \"{{rootEmail}}\",\n    \"password\": \"{{rootPassword}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set('accessToken', pm.response.json().data.accessToken); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{rootEmail}}\",\n  \"password\": \"{{rootPassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/auth/login"
+					},
+					"response": []
+				},
+				{
+					"name": "Current Account",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/auth/me"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin or User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"New account\",\n  \"email\": \"{{accountEmail}}\",\n  \"password\": \"{{accountPassword}}\",\n  \"role\": \"{{accountRole}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/accounts"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 204) { pm.collectionVariables.unset('accessToken'); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/auth/logout"
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Variables",
 			"item": [
 				{
 					"name": "Create Variable",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('variableId', pm.response.json().data.id); pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) { pm.collectionVariables.set('variableId', pm.response.json().data.id); pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
-						"body": {"mode": "raw", "raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Staging variable\"\n}", "options": {"raw": {"language": "json"}}},
-						"url": "{{baseUrl}}/variables"
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Staging variable\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables"
 					},
 					"response": []
 				},
 				{
 					"name": "List Variables",
-					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/variables"},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables"
+					},
 					"response": []
 				},
 				{
 					"name": "Get Variable by ID",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
-					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/variables/{{variableId}}"},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables/{{variableId}}"
+					},
 					"response": []
 				},
 				{
 					"name": "Update Variable",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"]}}],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set('variableEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "If-Match", "value": "{{variableEtag}}"}],
-						"body": {"mode": "raw", "raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Updated customer_name variable\"\n}", "options": {"raw": {"language": "json"}}},
-						"url": "{{baseUrl}}/variables/{{variableId}}"
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "If-Match",
+								"value": "{{variableEtag}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Updated customer_name variable\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables/{{variableId}}"
 					},
 					"response": []
 				}
@@ -49,34 +248,102 @@
 			"item": [
 				{
 					"name": "Create Environment",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('environmentId', pm.response.json().data.id); pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) { pm.collectionVariables.set('environmentId', pm.response.json().data.id); pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
-						"body": {"mode": "raw", "raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Staging environment\"\n}", "options": {"raw": {"language": "json"}}},
-						"url": "{{baseUrl}}/environments"
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Staging environment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/environments"
 					},
 					"response": []
 				},
 				{
 					"name": "List Environments",
-					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/environments"},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/environments"
+					},
 					"response": []
 				},
 				{
 					"name": "Get Environment by ID",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
-					"request": {"method": "GET", "header": [], "url": "{{baseUrl}}/environments/{{environmentId}}"},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/environments/{{environmentId}}"
+					},
 					"response": []
 				},
 				{
 					"name": "Update Environment",
-					"event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"]}}],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { pm.collectionVariables.set('environmentEtag', pm.response.headers.get('ETag')); }"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "If-Match", "value": "{{environmentEtag}}"}],
-						"body": {"mode": "raw", "raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Updated staging environment\"\n}", "options": {"raw": {"language": "json"}}},
-						"url": "{{baseUrl}}/environments/{{environmentId}}"
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "If-Match",
+								"value": "{{environmentEtag}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"staging\",\n  \"description\": \"Updated staging environment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/environments/{{environmentId}}"
 					},
 					"response": []
 				}
@@ -124,11 +391,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/tools",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/tools",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"tools"
 							]
 						},
@@ -142,11 +411,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/tools",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/tools",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"tools"
 							]
 						},
@@ -160,9 +431,17 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/tools/{{toolId}}/usages",
-							"host": ["{{baseUrl}}"],
-							"path": ["tools", "{{toolId}}", "usages"]
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/tools/{{toolId}}/usages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organisations",
+								"{{organisationId}}",
+								"tools",
+								"{{toolId}}",
+								"usages"
+							]
 						},
 						"description": "Lists draft agents using the tool directly or through assigned instructions, deduplicated per agent. Excludes saved snapshots and unassigned instructions."
 					},
@@ -185,11 +464,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"tools",
 								":toolId"
 							],
@@ -240,11 +521,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"tools",
 								":toolId"
 							],
@@ -266,11 +549,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -310,11 +595,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -392,11 +679,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/instructions",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/instructions",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"instructions"
 							]
 						},
@@ -410,11 +699,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/instructions",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/instructions",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"instructions"
 							]
 						},
@@ -428,9 +719,17 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/instructions/{{instructionId}}/usages",
-							"host": ["{{baseUrl}}"],
-							"path": ["instructions", "{{instructionId}}", "usages"]
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/instructions/{{instructionId}}/usages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organisations",
+								"{{organisationId}}",
+								"instructions",
+								"{{instructionId}}",
+								"usages"
+							]
 						},
 						"description": "Lists referencing agents in draft concierge versions only. Immutable saved snapshots are excluded."
 					},
@@ -453,11 +752,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"instructions",
 								":instructionId"
 							],
@@ -508,11 +809,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"instructions",
 								":instructionId"
 							],
@@ -572,11 +875,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/concierges",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges"
 							]
 						},
@@ -590,11 +895,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges"
 							]
 						},
@@ -608,11 +915,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId"
 							],
@@ -634,11 +943,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierge/:conciergeId:save",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierge/:conciergeId:save",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierge",
 								":conciergeId:save"
 							],
@@ -659,11 +970,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -728,11 +1041,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -762,11 +1077,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -809,11 +1126,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -880,11 +1199,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -920,11 +1241,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -967,11 +1290,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"organisations",
+								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
 								"concierge-versions",
@@ -1012,10 +1337,61 @@
 		}
 	],
 	"variable": [
-  {"key": "variableId", "value": "", "type": "string"},
-  {"key": "variableEtag", "value": "", "type": "string"},
-		{"key": "environmentId", "value": "", "type": "string"},
-		{"key": "environmentEtag", "value": "", "type": "string"},
+		{
+			"key": "organisationId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "rootEmail",
+			"value": "root@example.com",
+			"type": "string"
+		},
+		{
+			"key": "rootPassword",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "accountEmail",
+			"value": "user@example.com",
+			"type": "string"
+		},
+		{
+			"key": "accountPassword",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "accountRole",
+			"value": "user",
+			"type": "string"
+		},
+		{
+			"key": "variableId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "variableEtag",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "environmentId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "environmentEtag",
+			"value": "",
+			"type": "string"
+		},
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:8080/api/v1",
@@ -1061,5 +1437,15 @@
 			"value": "draft",
 			"type": "string"
 		}
-	]
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	}
 }

@@ -13,14 +13,14 @@ import (
 
 const collectionEnvironments = "environments"
 
-type EnvironmentRepository struct{ collection *mongo.Collection }
+type EnvironmentRepository struct{ collection *scopedCollection }
 
 func NewEnvironmentRepository(db *mongo.Database) *EnvironmentRepository {
-	return &EnvironmentRepository{collection: db.Collection(collectionEnvironments)}
+	return &EnvironmentRepository{collection: newScopedCollection(db, collectionEnvironments)}
 }
 
 func (r *EnvironmentRepository) InitIndexes(ctx context.Context) error {
-	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "name", Value: 1}}, Options: options.Index().SetUnique(true)})
+	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}}, Options: options.Index().SetUnique(true)})
 	if err != nil {
 		return fmt.Errorf("create environment indexes: %w", err)
 	}

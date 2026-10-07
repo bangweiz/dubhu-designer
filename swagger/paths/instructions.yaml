@@ -1,4 +1,6 @@
-/instructions:
+/organisations/{organisationId}/instructions:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new instruction
     description: Creates a new LLM instruction. The content can reference tools using the syntax {{tool:tool_id}}. The service parses these references, verifies that all referenced tools exist in the database, and populates the instruction's tools field with their ObjectIDs. If any referenced tool does not exist, the request is rejected with a 400 Bad Request.
@@ -15,6 +17,8 @@
             name: "search_and_summarize"
             content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Instruction created successfully
         headers:
@@ -66,6 +70,8 @@
     tags:
       - Instructions
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: List of instructions retrieved successfully
         content:
@@ -88,7 +94,9 @@
                   type: string
                   example: "failed to query instructions"
 
-/instructions/{instructionId}/usages:
+/organisations/{organisationId}/instructions/{instructionId}/usages:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: List instruction usages
     description: Returns one entry per referencing agent in draft concierge versions. Saved snapshots are excluded because their instructions are independent of the current instruction. An unused instruction returns an empty array.
@@ -100,6 +108,8 @@
         required: true
         schema: {type: string}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Instruction usages ordered by concierge name, version, and agent name.
         content:
@@ -114,7 +124,9 @@
       '404': {description: Instruction ID is invalid or the instruction does not exist}
       '500': {description: Internal server error}
 
-/instructions/{instructionId}:
+/organisations/{organisationId}/instructions/{instructionId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: Get instruction by ID
     description: Retrieves a specific instruction by its MongoDB ObjectID.
@@ -130,6 +142,8 @@
           type: string
           example: "651da3b57f8641a27e36c579"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Instruction retrieved successfully
         headers:
@@ -194,6 +208,8 @@
             name: "search_and_summarize_v2"
             content: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Instruction updated successfully
         headers:

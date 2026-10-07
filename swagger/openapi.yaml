@@ -7,7 +7,11 @@ servers:
   - url: http://localhost:8080/api/v1
     description: Local development server
 
+security:
+  - BearerAuth: []
+
 tags:
+  - name: Authentication
   - name: Tools
   - name: Instructions
   - name: Concierges
@@ -16,44 +20,59 @@ tags:
   - name: Environments
 
 paths:
-  /tools:
-    $ref: './paths/tools.yaml#/~1tools'
-  /tools/{toolId}/usages:
-    $ref: './paths/tools.yaml#/~1tools~1{toolId}~1usages'
-  /tools/{toolId}:
-    $ref: './paths/tools.yaml#/~1tools~1{toolId}'
-  /instructions:
-    $ref: './paths/instructions.yaml#/~1instructions'
-  /instructions/{instructionId}/usages:
-    $ref: './paths/instructions.yaml#/~1instructions~1{instructionId}~1usages'
-  /instructions/{instructionId}:
-    $ref: './paths/instructions.yaml#/~1instructions~1{instructionId}'
-  /concierges:
-    $ref: './paths/concierges.yaml#/~1concierges'
-  /concierges/{conciergeId}:
-    $ref: './paths/concierges.yaml#/~1concierges~1{conciergeId}'
-  /concierge/{conciergeId}:save:
-    $ref: './paths/concierges.yaml#/~1concierge~1{conciergeId}:save'
-  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
-    $ref: './paths/concierges.yaml#/~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}'
-  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
-    $ref: './paths/agents.yaml#/~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents'
-  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
-    $ref: './paths/agents.yaml#/~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}'
-  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
-    $ref: './paths/agents.yaml#/~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1instructions~1{instructionId}'
-  /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
-    $ref: './paths/agents.yaml#/~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1tools~1{toolId}'
-  /variables:
-    $ref: './paths/variables.yaml#/~1variables'
-  /variables/{variableId}:
-    $ref: './paths/variables.yaml#/~1variables~1{variableId}'
-  /environments:
-    $ref: './paths/environments.yaml#/~1environments'
-  /environments/{environmentId}:
-    $ref: './paths/environments.yaml#/~1environments~1{environmentId}'
+  /organisations:
+    $ref: './paths/auth.yaml#/~1organisations'
+  /organisations/{organisationId}/auth/login:
+    $ref: './paths/auth.yaml#/~1organisations~1{organisationId}~1auth~1login'
+  /organisations/{organisationId}/auth/me:
+    $ref: './paths/auth.yaml#/~1organisations~1{organisationId}~1auth~1me'
+  /organisations/{organisationId}/auth/logout:
+    $ref: './paths/auth.yaml#/~1organisations~1{organisationId}~1auth~1logout'
+  /organisations/{organisationId}/accounts:
+    $ref: './paths/auth.yaml#/~1organisations~1{organisationId}~1accounts'
+  /organisations/{organisationId}/tools:
+    $ref: './paths/tools.yaml#/~1organisations~1{organisationId}~1tools'
+  /organisations/{organisationId}/tools/{toolId}/usages:
+    $ref: './paths/tools.yaml#/~1organisations~1{organisationId}~1tools~1{toolId}~1usages'
+  /organisations/{organisationId}/tools/{toolId}:
+    $ref: './paths/tools.yaml#/~1organisations~1{organisationId}~1tools~1{toolId}'
+  /organisations/{organisationId}/instructions:
+    $ref: './paths/instructions.yaml#/~1organisations~1{organisationId}~1instructions'
+  /organisations/{organisationId}/instructions/{instructionId}/usages:
+    $ref: './paths/instructions.yaml#/~1organisations~1{organisationId}~1instructions~1{instructionId}~1usages'
+  /organisations/{organisationId}/instructions/{instructionId}:
+    $ref: './paths/instructions.yaml#/~1organisations~1{organisationId}~1instructions~1{instructionId}'
+  /organisations/{organisationId}/concierges:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges'
+  /organisations/{organisationId}/concierges/{conciergeId}:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}'
+  /organisations/{organisationId}/concierge/{conciergeId}:save:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierge~1{conciergeId}:save'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1instructions~1{instructionId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1tools~1{toolId}'
+  /organisations/{organisationId}/variables:
+    $ref: './paths/variables.yaml#/~1organisations~1{organisationId}~1variables'
+  /organisations/{organisationId}/variables/{variableId}:
+    $ref: './paths/variables.yaml#/~1organisations~1{organisationId}~1variables~1{variableId}'
+  /organisations/{organisationId}/environments:
+    $ref: './paths/environments.yaml#/~1organisations~1{organisationId}~1environments'
+  /organisations/{organisationId}/environments/{environmentId}:
+    $ref: './paths/environments.yaml#/~1organisations~1{organisationId}~1environments~1{environmentId}'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Opaque bearer token returned by organisation login; expires after 24 hours.
   schemas:
     ToolInput:
       $ref: './schemas/tools.yaml#/ToolInput'
@@ -111,3 +130,19 @@ components:
       $ref: './schemas/common.yaml#/FieldError'
     ErrorResponse:
       $ref: './schemas/common.yaml#/ErrorResponse'
+    Organisation:
+      $ref: './schemas/auth.yaml#/Organisation'
+    Account:
+      $ref: './schemas/auth.yaml#/Account'
+    RootAccountRequest:
+      $ref: './schemas/auth.yaml#/RootAccountRequest'
+    CreateOrganisationRequest:
+      $ref: './schemas/auth.yaml#/CreateOrganisationRequest'
+    CreateOrganisationResponse:
+      $ref: './schemas/auth.yaml#/CreateOrganisationResponse'
+    LoginRequest:
+      $ref: './schemas/auth.yaml#/LoginRequest'
+    LoginResponse:
+      $ref: './schemas/auth.yaml#/LoginResponse'
+    CreateAccountRequest:
+      $ref: './schemas/auth.yaml#/CreateAccountRequest'

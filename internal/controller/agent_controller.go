@@ -39,7 +39,7 @@ func (c *AgentController) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// CreateAgent handles POST /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
+// CreateAgent handles POST /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
 func (c *AgentController) CreateAgent(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 
@@ -74,7 +74,7 @@ func (c *AgentController) CreateAgent(ctx *gin.Context) {
 	})
 }
 
-// ListAgents handles GET /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
+// ListAgents handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
 func (c *AgentController) ListAgents(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 
@@ -89,7 +89,7 @@ func (c *AgentController) ListAgents(ctx *gin.Context) {
 	})
 }
 
-// GetAgentByID handles GET /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
+// GetAgentByID handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
 func (c *AgentController) GetAgentByID(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
@@ -106,7 +106,7 @@ func (c *AgentController) GetAgentByID(ctx *gin.Context) {
 	})
 }
 
-// UpdateAgent handles PUT /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
+// UpdateAgent handles PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
 func (c *AgentController) UpdateAgent(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
@@ -149,7 +149,7 @@ func (c *AgentController) UpdateAgent(ctx *gin.Context) {
 	})
 }
 
-// AssignInstruction handles POST/PUT /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
+// AssignInstruction handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
 func (c *AgentController) AssignInstruction(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
@@ -164,7 +164,7 @@ func (c *AgentController) AssignInstruction(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// UnassignInstruction handles DELETE /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
+// UnassignInstruction handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
 func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
@@ -179,7 +179,7 @@ func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// AssignTool handles POST/PUT /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
+// AssignTool handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
 func (c *AgentController) AssignTool(ctx *gin.Context) {
 	err := c.agentService.AssignTool(
 		ctx.Request.Context(),
@@ -195,7 +195,7 @@ func (c *AgentController) AssignTool(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// UnassignTool handles DELETE /api/v1/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
+// UnassignTool handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
 func (c *AgentController) UnassignTool(ctx *gin.Context) {
 	err := c.agentService.UnassignTool(
 		ctx.Request.Context(),

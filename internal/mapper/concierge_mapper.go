@@ -17,5 +17,5 @@ func ToConciergeResponseDTO(c *models.Concierge) dto.ConciergeResponseDTO {
 	for _, v := range c.ConciergeVersions {
 		refs = append(refs, dto.ConciergeVersionDescriptorDTO{ConciergeVersionID: v.ConciergeVersionID.Hex(), Version: v.Version})
 	}
-	return dto.ConciergeResponseDTO{ID: c.ID.Hex(), Name: c.Name, Description: c.Description, Version: c.Version, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt, ConciergeVersions: refs}
+	return dto.ConciergeResponseDTO{ID: c.ID.Hex(), Name: c.Name, Description: c.Description, Version: c.Version, CreatedBy: auditID(c.CreatedBy), UpdatedBy: auditID(c.UpdatedBy), CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt, ConciergeVersions: refs}
 }

@@ -47,6 +47,8 @@ type Agent struct {
 	Instructions []bson.ObjectID `bson:"instructions" json:"instructions"`
 	Tools        []bson.ObjectID `bson:"tools" json:"tools"`
 	Version      int             `bson:"version" json:"-"`
+	CreatedBy    bson.ObjectID   `bson:"created_by" json:"createdBy"`
+	UpdatedBy    bson.ObjectID   `bson:"updated_by" json:"updatedBy"`
 	CreatedAt    time.Time       `bson:"created_at" json:"createdAt"`
 	UpdatedAt    time.Time       `bson:"updated_at" json:"updatedAt"`
 }

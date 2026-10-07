@@ -34,7 +34,7 @@ func (c *ToolController) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListToolUsages handles GET /api/v1/tools/:toolId/usages.
+// ListToolUsages handles GET /api/v1/organisations/:organisationId/tools/:toolId/usages.
 func (c *ToolController) ListToolUsages(ctx *gin.Context) {
 	usages, err := c.toolService.ListToolUsages(ctx.Request.Context(), ctx.Param("toolId"))
 	if err != nil {
@@ -44,7 +44,7 @@ func (c *ToolController) ListToolUsages(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 
-// CreateTool handles POST /api/v1/tools
+// CreateTool handles POST /api/v1/organisations/:organisationId/tools
 func (c *ToolController) CreateTool(ctx *gin.Context) {
 	var req dto.CreateToolDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -77,7 +77,7 @@ func (c *ToolController) CreateTool(ctx *gin.Context) {
 	})
 }
 
-// ListTools handles GET /api/v1/tools
+// ListTools handles GET /api/v1/organisations/:organisationId/tools
 func (c *ToolController) ListTools(ctx *gin.Context) {
 	tools, err := c.toolService.ListTools(ctx.Request.Context())
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *ToolController) ListTools(ctx *gin.Context) {
 	})
 }
 
-// GetToolByID handles GET /api/v1/tools/:toolId
+// GetToolByID handles GET /api/v1/organisations/:organisationId/tools/:toolId
 func (c *ToolController) GetToolByID(ctx *gin.Context) {
 	id := ctx.Param("toolId")
 
@@ -106,7 +106,7 @@ func (c *ToolController) GetToolByID(ctx *gin.Context) {
 	})
 }
 
-// UpdateTool handles PUT /api/v1/tools/:toolId
+// UpdateTool handles PUT /api/v1/organisations/:organisationId/tools/:toolId
 func (c *ToolController) UpdateTool(ctx *gin.Context) {
 	id := ctx.Param("toolId")
 	ifMatch := ctx.GetHeader("If-Match")

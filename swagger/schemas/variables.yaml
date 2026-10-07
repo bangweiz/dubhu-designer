@@ -12,5 +12,7 @@ Variable:
     id: {type: string}
     name: {type: string}
     description: {type: string}
+    createdBy: {type: string, readOnly: true, description: "Creating account ID; empty for legacy records with unknown provenance."}
+    updatedBy: {type: string, readOnly: true, description: "Last modifying account ID; empty for legacy records with unknown provenance."}
     createdAt: {type: string, format: date-time}
     updatedAt: {type: string, format: date-time}

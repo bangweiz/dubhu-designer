@@ -72,6 +72,8 @@ Agent:
     - instructions
     - tools
   properties:
+    createdBy: {type: string, readOnly: true, description: Creating account ID}
+    updatedBy: {type: string, readOnly: true, description: Last modifying account ID}
     id:
       type: string
       description: Hexadecimal MongoDB ObjectID of the agent
@@ -116,6 +118,8 @@ AgentSummary:
     - goal
     - model
   properties:
+    createdBy: {type: string, readOnly: true, description: Creating account ID}
+    updatedBy: {type: string, readOnly: true, description: Last modifying account ID}
     id:
       type: string
       description: Hexadecimal MongoDB ObjectID of the agent

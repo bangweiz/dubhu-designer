@@ -5,10 +5,12 @@ import "errors"
 // Repository errors describe persistence-layer outcomes. Services translate
 // these errors before returning them to callers outside this package.
 var (
-	ErrVariableNameExists    = errors.New("variable name already exists")
-	ErrEnvironmentNameExists = errors.New("environment name already exists")
-	ErrConciergeNameExists   = errors.New("concierge name already exists")
-	ErrConciergeNotFound     = errors.New("concierge not found")
+	ErrOrganisationNameExists = errors.New("organisation name already exists")
+	ErrAccountConflict        = errors.New("account already exists")
+	ErrVariableNameExists     = errors.New("variable name already exists")
+	ErrEnvironmentNameExists  = errors.New("environment name already exists")
+	ErrConciergeNameExists    = errors.New("concierge name already exists")
+	ErrConciergeNotFound      = errors.New("concierge not found")
 
 	ErrAgentNameExists      = errors.New("agent name already exists")
 	ErrAgentNotFound        = errors.New("agent not found")

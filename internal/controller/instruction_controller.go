@@ -34,7 +34,7 @@ func (c *InstructionController) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListInstructionUsages handles GET /api/v1/instructions/:instructionId/usages.
+// ListInstructionUsages handles GET /api/v1/organisations/:organisationId/instructions/:instructionId/usages.
 func (c *InstructionController) ListInstructionUsages(ctx *gin.Context) {
 	usages, err := c.instructionService.ListInstructionUsages(ctx.Request.Context(), ctx.Param("instructionId"))
 	if err != nil {
@@ -44,7 +44,7 @@ func (c *InstructionController) ListInstructionUsages(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 
-// CreateInstruction handles POST /api/v1/instructions
+// CreateInstruction handles POST /api/v1/organisations/:organisationId/instructions
 func (c *InstructionController) CreateInstruction(ctx *gin.Context) {
 	var req dto.CreateInstructionDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -77,7 +77,7 @@ func (c *InstructionController) CreateInstruction(ctx *gin.Context) {
 	})
 }
 
-// ListInstructions handles GET /api/v1/instructions
+// ListInstructions handles GET /api/v1/organisations/:organisationId/instructions
 func (c *InstructionController) ListInstructions(ctx *gin.Context) {
 	instructions, err := c.instructionService.ListInstructions(ctx.Request.Context())
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *InstructionController) ListInstructions(ctx *gin.Context) {
 	})
 }
 
-// GetInstructionByID handles GET /api/v1/instructions/:instructionId
+// GetInstructionByID handles GET /api/v1/organisations/:organisationId/instructions/:instructionId
 func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 	id := ctx.Param("instructionId")
 
@@ -106,7 +106,7 @@ func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 	})
 }
 
-// UpdateInstruction handles PUT /api/v1/instructions/:instructionId
+// UpdateInstruction handles PUT /api/v1/organisations/:organisationId/instructions/:instructionId
 func (c *InstructionController) UpdateInstruction(ctx *gin.Context) {
 	id := ctx.Param("instructionId")
 	ifMatch := ctx.GetHeader("If-Match")

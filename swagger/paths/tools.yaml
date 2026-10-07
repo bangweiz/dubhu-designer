@@ -1,4 +1,6 @@
-/tools:
+/organisations/{organisationId}/tools:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new tool
     description: Creates a new tool specification with inputs and outputs.
@@ -27,6 +29,8 @@
               - name: "body"
                 description: "Response body payload"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Tool created successfully
         headers:
@@ -72,6 +76,8 @@
     tags:
       - Tools
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: List of tools retrieved successfully
         content:
@@ -94,7 +100,9 @@
                   type: string
                   example: "failed to query tools"
 
-/tools/{toolId}/usages:
+/organisations/{organisationId}/tools/{toolId}/usages:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: List tool usages
     description: Returns one entry per draft agent that assigns this tool directly or assigns an instruction referencing the tool. Multiple reference paths to the same agent are deduplicated. Saved snapshots and unassigned instructions are excluded. An unused tool returns an empty array.
@@ -106,6 +114,8 @@
         required: true
         schema: {type: string}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Tool usages ordered by concierge name, version, and agent name.
         content:
@@ -120,7 +130,9 @@
       '404': {description: Tool ID is invalid or the tool does not exist}
       '500': {description: Internal server error}
 
-/tools/{toolId}:
+/organisations/{organisationId}/tools/{toolId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: Get tool by ID
     description: Retrieves a specific tool specification by its MongoDB ObjectID.
@@ -136,6 +148,8 @@
           type: string
           example: "651da3b57f8641a27e36c579"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Tool retrieved successfully
         headers:
@@ -210,6 +224,8 @@
               - name: "status_code"
                 description: "HTTP response status code"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Tool updated successfully
         headers:
