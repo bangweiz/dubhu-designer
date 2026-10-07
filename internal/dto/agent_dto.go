@@ -43,6 +43,8 @@ func (d *UpdateAgentDTO) Trim() {
 // AgentSummaryResponseDTO represents an agent without assigned instructions.
 // Used for listing agents.
 type AgentSummaryResponseDTO struct {
+	CreatedBy   string `json:"createdBy"`
+	UpdatedBy   string `json:"updatedBy"`
 	ID          string `json:"id"`
 	ConciergeID string `json:"conciergeId"`
 	Name        string `json:"name"`
@@ -53,6 +55,8 @@ type AgentSummaryResponseDTO struct {
 
 // AgentResponseDTO represents an agent returned in HTTP responses.
 type AgentResponseDTO struct {
+	CreatedBy    string                          `json:"createdBy"`
+	UpdatedBy    string                          `json:"updatedBy"`
 	ID           string                          `json:"id"`
 	ConciergeID  string                          `json:"conciergeId"`
 	Name         string                          `json:"name"`

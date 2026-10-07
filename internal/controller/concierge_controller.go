@@ -73,7 +73,7 @@ func (c *ConciergeController) GetConciergeVersion(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": saved})
 }
 
-// SaveConcierge handles POST /api/v1/concierge/:conciergeId:save.
+// SaveConcierge handles POST /api/v1/organisations/:organisationId/concierge/:conciergeId:save.
 func (c *ConciergeController) SaveConcierge(ctx *gin.Context) {
 	conciergeID, ok := strings.CutSuffix(ctx.Param("conciergeAction"), ":save")
 	if !ok || conciergeID == "" {
@@ -88,7 +88,7 @@ func (c *ConciergeController) SaveConcierge(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"data": saved})
 }
 
-// CreateConcierge handles POST /api/v1/concierges
+// CreateConcierge handles POST /api/v1/organisations/:organisationId/concierges
 func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 	var req dto.CreateConciergeDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -121,7 +121,7 @@ func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 	})
 }
 
-// ListConcierges handles GET /api/v1/concierges
+// ListConcierges handles GET /api/v1/organisations/:organisationId/concierges
 func (c *ConciergeController) ListConcierges(ctx *gin.Context) {
 	concierges, err := c.conciergeService.ListConcierges(ctx.Request.Context())
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *ConciergeController) ListConcierges(ctx *gin.Context) {
 	})
 }
 
-// GetConciergeByID handles GET /api/v1/concierges/:conciergeId
+// GetConciergeByID handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId
 func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 	id := ctx.Param("conciergeId")
 

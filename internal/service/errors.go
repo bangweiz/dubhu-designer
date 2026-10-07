@@ -9,6 +9,10 @@ import (
 // Service errors form the application-level error contract consumed by the
 // transport layer. Repository-specific sentinel errors are translated to this contract.
 var (
+	ErrOrganisationNameExists    = errors.New("organisation name already exists")
+	ErrAccountEmailExists        = errors.New("account email already exists in this organisation")
+	ErrUnauthenticated           = errors.New("invalid or expired credentials")
+	ErrForbidden                 = errors.New("access denied")
 	ErrVariableNotFound          = errors.New("variable not found")
 	ErrVariableNameExists        = errors.New("variable name already exists")
 	ErrVariableETagMismatch      = errors.New("variable etag does not match current representation")

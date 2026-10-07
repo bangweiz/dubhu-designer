@@ -62,6 +62,8 @@ InstructionSummary:
     content:
       type: string
       example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+    createdBy: {type: string, readOnly: true, description: "Creating account ID; empty for legacy records with unknown provenance."}
+    updatedBy: {type: string, readOnly: true, description: "Last modifying account ID; empty for legacy records with unknown provenance."}
     createdAt:
       type: string
       format: date-time
@@ -96,6 +98,8 @@ Instruction:
       description: List of resolved tools referenced by this instruction
       items:
         $ref: './tools.yaml#/Tool'
+    createdBy: {type: string, readOnly: true, description: "Creating account ID; empty for legacy records with unknown provenance."}
+    updatedBy: {type: string, readOnly: true, description: "Last modifying account ID; empty for legacy records with unknown provenance."}
     createdAt:
       type: string
       format: date-time

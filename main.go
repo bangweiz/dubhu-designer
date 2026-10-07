@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/bangweiz/dubhu-designer/internal/controller"
 	"github.com/bangweiz/dubhu-designer/internal/db"
@@ -21,6 +22,10 @@ func main() {
 	ctx := context.Background()
 
 	// Dependency Injection: Repositories
+	authRepo := repository.NewAuthRepository(database)
+	if err := authRepo.InitIndexes(ctx); err != nil {
+		panic(fmt.Sprintf("Failed to initialize auth indexes: %v", err))
+	}
 	variableRepo := repository.NewVariableRepository(database)
 	if err := variableRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize variable indexes: %v", err))
@@ -59,6 +64,10 @@ func main() {
 	}
 
 	// Dependency Injection: Services
+	authService, err := service.NewAuthService(authRepo)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize authentication: %v", err))
+	}
 	variableService := service.NewVariableService(variableRepo)
 	environmentService := service.NewEnvironmentService(environmentRepo)
 	toolService := service.NewToolService(toolRepo)
@@ -67,6 +76,7 @@ func main() {
 	agentService := service.NewAgentService(agentRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
 
 	// Dependency Injection: Controllers
+	authController := controller.NewAuthController(authService)
 	variableController := controller.NewVariableController(variableService)
 	environmentController := controller.NewEnvironmentController(environmentService)
 	toolController := controller.NewToolController(toolService)
@@ -76,15 +86,24 @@ func main() {
 
 	// Setup Gin router
 	router := gin.Default()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		panic(err)
+	}
+	router.Use(func(ctx *gin.Context) {
+		ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, 1<<20)
+		ctx.Next()
+	})
 
 	// API versioning group
-	apiV1 := router.Group("/api/v1")
-	variableController.RegisterRoutes(apiV1)
-	environmentController.RegisterRoutes(apiV1)
-	toolController.RegisterRoutes(apiV1)
-	instructionController.RegisterRoutes(apiV1)
-	conciergeController.RegisterRoutes(apiV1)
-	agentController.RegisterRoutes(apiV1)
+	apiV1 := router.Group("/api/v1", authController.RequirePermissions())
+	authController.RegisterRoutes(apiV1)
+	organisationAPI := apiV1.Group("/organisations/:organisationId")
+	variableController.RegisterRoutes(organisationAPI)
+	environmentController.RegisterRoutes(organisationAPI)
+	toolController.RegisterRoutes(organisationAPI)
+	instructionController.RegisterRoutes(organisationAPI)
+	conciergeController.RegisterRoutes(organisationAPI)
+	agentController.RegisterRoutes(organisationAPI)
 
 	log.Println("Server running on :8080")
 	if err := router.Run(":8080"); err != nil {

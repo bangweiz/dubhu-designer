@@ -1,4 +1,6 @@
-/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new agent
     description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge.
@@ -32,6 +34,8 @@
             goal: "Summarize research papers and extract key insights."
             model: "gemini-3.5-flash"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Agent created successfully
         headers:
@@ -112,6 +116,8 @@
           type: string
           example: "651da3b57f8641a27e36c579"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: A list of agents
         content:
@@ -144,7 +150,9 @@
                   type: string
                   example: "failed to query agents"
 
-/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: Get agent by ID
     description: Retrieves a specific agent by its MongoDB ObjectID under the specified concierge.
@@ -174,6 +182,8 @@
           type: string
           example: "651da3b57f8641a27e36c582"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Agent retrieved successfully
         headers:
@@ -255,6 +265,8 @@
             goal: "Summarize research papers, extract key insights, and generate critical evaluations."
             model: "gemini-3.5-flash"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Agent updated successfully
         headers:
@@ -326,7 +338,9 @@
                   type: string
                   example: "failed to update agent"
 
-/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Assign an instruction to an agent
     description: Assigns an existing instruction specification to the agent. Validates that the concierge, agent, and instruction exist. Duplicate assignments are handled idempotently.
@@ -363,6 +377,8 @@
           type: string
           example: "651da3b57f8641a27e36c580"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '409':
         description: Saved concierge versions are immutable
         content:
@@ -427,6 +443,8 @@
           type: string
           example: "651da3b57f8641a27e36c580"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '409':
         description: Saved concierge versions are immutable
         content:
@@ -456,7 +474,9 @@
                   type: string
                   example: "failed to unassign instruction from agent"
 
-/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Assign a tool to an agent
     description: Assigns an existing tool to the agent. Duplicate assignments succeed idempotently.
@@ -490,6 +510,8 @@
           type: string
           example: "651da3b57f8641a27e36c583"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '409':
         description: Saved concierge versions are immutable
         content:
@@ -543,6 +565,8 @@
           type: string
           example: "651da3b57f8641a27e36c583"
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '409':
         description: Saved concierge versions are immutable
         content:

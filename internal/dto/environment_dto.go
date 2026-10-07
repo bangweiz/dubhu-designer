@@ -22,6 +22,8 @@ type EnvironmentResponseDTO struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Version     int       `json:"-"`
+	CreatedBy   string    `json:"createdBy"`
+	UpdatedBy   string    `json:"updatedBy"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }

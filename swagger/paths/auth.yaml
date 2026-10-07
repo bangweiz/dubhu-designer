@@ -1,0 +1,110 @@
+/organisations:
+  post:
+    summary: Create an organisation and its sole root account
+    description: Public onboarding endpoint. Organisation and root account are created atomically. Organisation names are unique; account emails are unique within an organisation.
+    operationId: createOrganisation
+    tags: [Authentication]
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/auth.yaml#/CreateOrganisationRequest'}
+    responses:
+      '201':
+        description: Organisation and root created; login separately to obtain a token.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/auth.yaml#/CreateOrganisationResponse'}
+      '400': {description: Invalid request or validation failed}
+      '409': {description: Organisation name already exists}
+      '429': {description: Too many authentication requests}
+      '500': {description: Internal server error}
+/organisations/{organisationId}/auth/login:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+  post:
+    summary: Login to an organisation
+    operationId: login
+    tags: [Authentication]
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/auth.yaml#/LoginRequest'}
+    responses:
+      '200':
+        description: Expiring opaque bearer session issued. Response must not be cached.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/auth.yaml#/LoginResponse'}
+      '400': {description: Invalid request body}
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '429': {description: Too many authentication requests}
+      '500': {description: Internal server error}
+/organisations/{organisationId}/auth/me:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+  get:
+    summary: Get the authenticated account
+    operationId: getCurrentAccount
+    tags: [Authentication]
+    responses:
+      '200':
+        description: Current account
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/auth.yaml#/Account'}
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
+      '500': {description: Internal server error}
+/organisations/{organisationId}/auth/logout:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+  post:
+    summary: Revoke the current session
+    description: Any authenticated role may log out its own session. Other sessions remain active.
+    operationId: logout
+    tags: [Authentication]
+    responses:
+      '204': {description: Session revoked}
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
+      '500': {description: Internal server error}
+/organisations/{organisationId}/accounts:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+  post:
+    summary: Create an admin or user account
+    description: Root-only. Organisation comes from the authenticated session. Root role is not accepted.
+    operationId: createAccount
+    tags: [Authentication]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/auth.yaml#/CreateAccountRequest'}
+    responses:
+      '201':
+        description: Account created
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data: {$ref: '../schemas/auth.yaml#/Account'}
+      '400': {description: Invalid request or validation failed}
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
+      '409': {description: Email already exists in this organisation}
+      '500': {description: Internal server error}

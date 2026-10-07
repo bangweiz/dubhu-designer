@@ -27,6 +27,8 @@ type ConciergeResponseDTO struct {
 	Description       string                          `json:"description"`
 	ConciergeVersions []ConciergeVersionDescriptorDTO `json:"conciergeVersions"`
 	Version           int                             `json:"-"`
+	CreatedBy         string                          `json:"createdBy"`
+	UpdatedBy         string                          `json:"updatedBy"`
 	CreatedAt         time.Time                       `json:"createdAt"`
 	UpdatedAt         time.Time                       `json:"updatedAt"`
 }

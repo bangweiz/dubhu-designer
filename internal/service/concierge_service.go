@@ -128,6 +128,8 @@ func (s *ConciergeService) GetConciergeVersion(ctx context.Context, conciergeIDS
 		return nil, err
 	}
 	response.ID = draft.ID
+	response.CreatedBy = draft.CreatedBy
+	response.UpdatedBy = draft.UpdatedBy
 	response.CreatedAt = draft.CreatedAt
 	response.UpdatedAt = draft.UpdatedAt
 	response.Saved = false

@@ -1,4 +1,6 @@
-/environments:
+/organisations/{organisationId}/environments:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create an environment
     operationId: createEnvironment
@@ -9,6 +11,8 @@
         application/json:
           schema: {$ref: '../schemas/environments.yaml#/EnvironmentRequest'}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '201':
         description: Environment created
         headers:
@@ -29,6 +33,8 @@
     operationId: listEnvironments
     tags: [Environments]
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Environments ordered by name. Empty list is returned as an array.
         content:
@@ -41,8 +47,9 @@
                   items: {$ref: '../schemas/environments.yaml#/Environment'}
       '500': {description: Internal server error}
 
-/environments/{environmentId}:
+/organisations/{organisationId}/environments/{environmentId}:
   parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
     - name: environmentId
       in: path
       required: true
@@ -52,6 +59,8 @@
     operationId: getEnvironmentById
     tags: [Environments]
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Environment retrieved
         headers:
@@ -80,6 +89,8 @@
         application/json:
           schema: {$ref: '../schemas/environments.yaml#/EnvironmentRequest'}
     responses:
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
         description: Environment updated
         headers:

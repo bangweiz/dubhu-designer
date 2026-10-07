@@ -14,5 +14,5 @@ func ToInitialEnvironmentEntity(input dto.CreateEnvironmentDTO) *models.Environm
 }
 
 func ToEnvironmentResponseDTO(e *models.Environment) dto.EnvironmentResponseDTO {
-	return dto.EnvironmentResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, Version: e.Version, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
+	return dto.EnvironmentResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, Version: e.Version, CreatedBy: auditID(e.CreatedBy), UpdatedBy: auditID(e.UpdatedBy), CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
 }

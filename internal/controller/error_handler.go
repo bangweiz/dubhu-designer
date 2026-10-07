@@ -23,7 +23,19 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 	}
 
 	var referencedToolsErr *service.ErrReferencedToolsNotFound
+	var validationErr validator.ValidationErrors
 	switch {
+	case errors.Is(err, service.ErrUnauthenticated):
+		ctx.Header("WWW-Authenticate", "Bearer")
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired credentials"})
+	case errors.Is(err, service.ErrForbidden):
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+	case errors.Is(err, service.ErrOrganisationNameExists):
+		writeNameConflict(ctx, "organisation name already exists", meta.nameValue)
+	case errors.Is(err, service.ErrAccountEmailExists):
+		ctx.JSON(http.StatusConflict, gin.H{"error": "Account email already exists in this organisation"})
+	case errors.As(err, &validationErr):
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": validationErr})
 	case errors.Is(err, service.ErrVariableNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Variable not found"})
 	case errors.Is(err, service.ErrVariableETagMismatch):

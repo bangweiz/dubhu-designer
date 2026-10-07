@@ -53,7 +53,7 @@ func ToAgentResponseDTO(a *models.Agent, instructions []models.Instruction, tool
 	}
 
 	return dto.AgentResponseDTO{
-		ID:           a.ID.Hex(),
+		CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
 		ConciergeID:  a.ConciergeID.Hex(),
 		Name:         a.Name,
 		Description:  a.Description,
@@ -68,7 +68,7 @@ func ToAgentResponseDTO(a *models.Agent, instructions []models.Instruction, tool
 // ToAgentSummaryResponseDTO converts a domain Agent model to AgentSummaryResponseDTO.
 func ToAgentSummaryResponseDTO(a *models.Agent) dto.AgentSummaryResponseDTO {
 	return dto.AgentSummaryResponseDTO{
-		ID:          a.ID.Hex(),
+		CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
 		ConciergeID: a.ConciergeID.Hex(),
 		Name:        a.Name,
 		Description: a.Description,

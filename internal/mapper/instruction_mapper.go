@@ -5,10 +5,11 @@ import (
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
 	"github.com/bangweiz/dubhu-designer/internal/models"
+	"github.com/bangweiz/dubhu-designer/internal/repository"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func ToInstructionUsageResponseDTOList(usages []models.InstructionUsage) []dto.InstructionUsageResponseDTO {
+func ToInstructionUsageResponseDTOList(usages []repository.InstructionUsageResult) []dto.InstructionUsageResponseDTO {
 	result := make([]dto.InstructionUsageResponseDTO, 0, len(usages))
 	for _, usage := range usages {
 		result = append(result, dto.InstructionUsageResponseDTO{
@@ -46,7 +47,7 @@ func ToInstructionSummaryResponseDTO(inst *models.Instruction) dto.InstructionSu
 		Name:      inst.Name,
 		Content:   inst.Content,
 		Version:   inst.Version,
-		CreatedAt: inst.CreatedAt,
+		CreatedBy: auditID(inst.CreatedBy), UpdatedBy: auditID(inst.UpdatedBy), CreatedAt: inst.CreatedAt,
 		UpdatedAt: inst.UpdatedAt,
 	}
 }
@@ -81,7 +82,7 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto
 		Content:   inst.Content,
 		Tools:     toolDTOs,
 		Version:   inst.Version,
-		CreatedAt: inst.CreatedAt,
+		CreatedBy: auditID(inst.CreatedBy), UpdatedBy: auditID(inst.UpdatedBy), CreatedAt: inst.CreatedAt,
 		UpdatedAt: inst.UpdatedAt,
 	}
 }

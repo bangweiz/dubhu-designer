@@ -14,5 +14,5 @@ func ToInitialVariableEntity(input dto.CreateVariableDTO) *models.Variable {
 }
 
 func ToVariableResponseDTO(e *models.Variable) dto.VariableResponseDTO {
-	return dto.VariableResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, Version: e.Version, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
+	return dto.VariableResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, Version: e.Version, CreatedBy: auditID(e.CreatedBy), UpdatedBy: auditID(e.UpdatedBy), CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
 }

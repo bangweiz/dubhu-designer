@@ -1,0 +1,13 @@
+Unauthenticated:
+  description: Missing, invalid, revoked, or expired bearer credentials.
+  headers:
+    WWW-Authenticate:
+      schema: {type: string, example: Bearer}
+  content:
+    application/json:
+      schema: {$ref: './schemas/common.yaml#/ErrorResponse'}
+Forbidden:
+  description: The account belongs to another organisation or its role cannot perform this action. Business writes require root/admin; account creation requires root.
+  content:
+    application/json:
+      schema: {$ref: './schemas/common.yaml#/ErrorResponse'}

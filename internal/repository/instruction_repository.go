@@ -13,7 +13,7 @@ import (
 const collectionInstructions = "instructions"
 
 // ListUsages reads current instruction references from drafts, excluding immutable snapshots.
-func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID) ([]models.InstructionUsage, error) {
+func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID) ([]InstructionUsageResult, error) {
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: bson.M{"agents.instructions": id}}},
 		bson.D{{Key: "$unwind", Value: "$agents"}},
@@ -28,12 +28,12 @@ func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID
 		bson.D{{Key: "$unset", Value: "concierge"}},
 		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
 	}
-	cursor, err := r.collection.Database().Collection(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	cursor, err := r.collection.sibling(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate instruction usages: %w", err)
 	}
 	defer cursor.Close(ctx)
-	usages := []models.InstructionUsage{}
+	usages := []InstructionUsageResult{}
 	if err := cursor.All(ctx, &usages); err != nil {
 		return nil, fmt.Errorf("decode instruction usages: %w", err)
 	}
@@ -42,21 +42,21 @@ func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID
 
 // InstructionRepository manages Instruction persistence in MongoDB.
 type InstructionRepository struct {
-	collection *mongo.Collection
+	collection *scopedCollection
 }
 
 // NewInstructionRepository creates a new InstructionRepository instance.
 func NewInstructionRepository(database *mongo.Database) *InstructionRepository {
 	return &InstructionRepository{
-		collection: database.Collection(collectionInstructions),
+		collection: newScopedCollection(database, collectionInstructions),
 	}
 }
 
 // InitIndexes creates necessary database indexes for instructions:
-// 1. Unique index on name.
+// 1. Unique index on (organisation_id, name).
 func (r *InstructionRepository) InitIndexes(ctx context.Context) error {
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "name", Value: 1}},
+		Keys:    bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}
 

@@ -52,22 +52,22 @@ func (r *ConciergeRepository) Update(ctx context.Context, id bson.ObjectID, vers
 
 // ConciergeRepository manages Concierge persistence in MongoDB.
 type ConciergeRepository struct {
-	collection *mongo.Collection
+	collection *scopedCollection
 }
 
 // NewConciergeRepository creates a new ConciergeRepository instance.
 func NewConciergeRepository(database *mongo.Database) *ConciergeRepository {
 	return &ConciergeRepository{
-		collection: database.Collection(collectionConcierges),
+		collection: newScopedCollection(database, collectionConcierges),
 	}
 }
 
 // InitIndexes creates necessary database indexes for concierges:
-// 1. Unique index on name.
+// 1. Unique index on (organisation_id, name).
 func (r *ConciergeRepository) InitIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
-			Keys:    bson.D{{Key: "name", Value: 1}},
+			Keys:    bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
 	}
