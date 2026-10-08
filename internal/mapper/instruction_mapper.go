@@ -22,13 +22,13 @@ func ToInstructionUsageResponseDTOList(usages []repository.InstructionUsageResul
 
 // ToInitialInstructionEntity converts a CreateInstructionDTO into a new Instruction entity
 // with a new ObjectID, and UTC timestamps.
-func ToInitialInstructionEntity(input dto.CreateInstructionDTO, toolIDs []bson.ObjectID) *models.Instruction {
+func ToInitialInstructionEntity(input dto.CreateInstructionDTO, toolIDs, variableIDs []bson.ObjectID) *models.Instruction {
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	if toolIDs == nil {
 		toolIDs = []bson.ObjectID{}
 	}
 
-	return &models.Instruction{ID: bson.NewObjectID(), Name: input.Name, Content: input.Content, Tools: toolIDs, AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now}}
+	return &models.Instruction{ID: bson.NewObjectID(), Name: input.Name, Content: input.Content, Tools: toolIDs, Variables: variableIDs, AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now}}
 }
 
 // ToInstructionSummaryResponseDTO converts a domain Instruction model to InstructionSummaryResponseDTO.
@@ -53,7 +53,7 @@ func ToInstructionSummaryResponseDTOList(instructions []models.Instruction) []dt
 
 // ToInstructionResponseDTO converts a domain Instruction model and its resolved tools to InstructionResponseDTO,
 // ensuring Tools is always an initialized array of ToolResponseDTO ([] if empty) ordered by instruction.Tools.
-func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto.InstructionResponseDTO {
+func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool, variables []models.Variable) dto.InstructionResponseDTO {
 	toolMap := make(map[bson.ObjectID]dto.ToolResponseDTO, len(tools))
 	for i := range tools {
 		toolMap[tools[i].ID] = ToToolResponseDTO(&tools[i])
@@ -66,7 +66,18 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto
 		}
 	}
 
+	variableMap := make(map[bson.ObjectID]models.Variable, len(variables))
+	for _, variable := range variables {
+		variableMap[variable.ID] = variable
+	}
+	variableDTOs := make([]dto.VariableResponseDTO, 0, len(inst.Variables))
+	for _, id := range inst.Variables {
+		if variable, ok := variableMap[id]; ok {
+			variableDTOs = append(variableDTOs, ToVariableResponseDTO(&variable))
+		}
+	}
 	return dto.InstructionResponseDTO{
+		Variables: variableDTOs,
 		ID:        inst.ID.Hex(),
 		Name:      inst.Name,
 		Content:   inst.Content,
@@ -79,5 +90,5 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto
 // ToPopulatedInstructionResponseDTO converts a domain PopulatedInstruction model to InstructionResponseDTO,
 // ensuring Tools is ordered by the instruction's Tools slice.
 func ToPopulatedInstructionResponseDTO(populated *models.PopulatedInstruction) dto.InstructionResponseDTO {
-	return ToInstructionResponseDTO(&populated.Instruction, populated.ResolvedTools)
+	return ToInstructionResponseDTO(&populated.Instruction, populated.ResolvedTools, populated.ResolvedVariables)
 }

@@ -71,7 +71,7 @@ Concierge:
 
 SavedConciergeVersion:
   type: object
-  required: [id, conciergeId, version, name, description, agents, instructions, tools, createdAt, updatedAt]
+  required: [id, conciergeId, version, name, description, agents, instructions, tools, variables, createdAt, updatedAt]
   properties:
     id:
       type: string
@@ -90,6 +90,10 @@ SavedConciergeVersion:
       type: array
       items:
         $ref: '#/SavedInstruction'
+    variables:
+      type: array
+      items:
+        $ref: './variables.yaml#/Variable'
     tools:
       type: array
       items:
@@ -148,7 +152,7 @@ SavedAgent:
 
 SavedInstruction:
   type: object
-  required: [id, name, content, tools, createdAt, updatedAt]
+  required: [id, name, content, tools, variables, createdAt, updatedAt]
   properties:
     id:
       type: string
@@ -156,6 +160,10 @@ SavedInstruction:
       type: string
     content:
       type: string
+    variables:
+      type: array
+      items:
+        type: string
     tools:
       type: array
       items:

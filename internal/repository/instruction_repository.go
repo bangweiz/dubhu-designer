@@ -88,9 +88,9 @@ func (r *InstructionRepository) GetByID(ctx context.Context, id bson.ObjectID) (
 	return &inst, nil
 }
 
-// GetByIDWithTools finds an Instruction by ID and populates its referenced tools via MongoDB aggregation ($lookup).
+// GetByIDWithReferences finds an Instruction by ID and populates its referenced tools via MongoDB aggregation ($lookup).
 // Returns nil, nil if the instruction is not found.
-func (r *InstructionRepository) GetByIDWithTools(ctx context.Context, id bson.ObjectID) (*models.PopulatedInstruction, error) {
+func (r *InstructionRepository) GetByIDWithReferences(ctx context.Context, id bson.ObjectID) (*models.PopulatedInstruction, error) {
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: bson.M{"_id": id}}},
 		bson.D{{Key: "$lookup", Value: bson.M{
@@ -98,6 +98,9 @@ func (r *InstructionRepository) GetByIDWithTools(ctx context.Context, id bson.Ob
 			"localField":   "tools",
 			"foreignField": "_id",
 			"as":           "resolved_tools",
+		}}},
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from": collectionVariables, "localField": "variables", "foreignField": "_id", "as": "resolved_variables",
 		}}},
 	}
 

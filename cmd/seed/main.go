@@ -1,4 +1,4 @@
-// Local development reset and fixtures. Never targets a remote database.
+// Local development fixtures. The optional -reset flag clears the local database.
 package main
 
 import (
@@ -25,14 +25,15 @@ func must(err error) {
 func main() {
 	reset := flag.Bool("reset", false, "Delete all documents in local dubhu database before seeding")
 	flag.Parse()
-	if !*reset {
-		log.Fatal("Use -reset to explicitly authorize clearing localhost:27017/dubhu")
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	database, err := db.ConnectDB()
 	must(err)
 	defer database.Client().Disconnect(context.Background())
+	if !*reset {
+		seedExamples(ctx, database)
+		return
+	}
 	// Prepare hashes before removing any existing documents.
 	password := "DubhuTest123!"
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
@@ -104,7 +105,7 @@ func main() {
 		insert("concierges", models.Concierge{ID: id, OrganisationID: orgID, Name: v.name, Description: v.description, Agents: []models.Agent{agent}, NextVersion: 1, ConciergeVersions: []models.ConciergeVersionReference{}, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})
 	}
 	for _, v := range []struct{ name, description string }{{"property_name", "The name of the property welcoming your guests."}, {"support_email", "The email address for the customer care team."}, {"check_in_time", "The standard check-in time for guest reservations."}} {
-		insert("variables", models.Variable{ID: bson.NewObjectID(), OrganisationID: orgID, Name: v.name, Description: v.description, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})
+		insert("variables", models.Variable{Type: models.VariableTypeString, ID: bson.NewObjectID(), OrganisationID: orgID, Name: v.name, Description: v.description, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})
 	}
 	for _, v := range []struct{ name, description string }{{"Development", "A workspace for trying new ideas."}, {"Staging", "Review and test changes before going live."}, {"Production", "The live workspace for customer-facing concierges."}} {
 		insert("environments", models.Environment{ID: bson.NewObjectID(), OrganisationID: orgID, Name: v.name, Description: v.description, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})

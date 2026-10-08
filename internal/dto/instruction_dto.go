@@ -55,12 +55,13 @@ type InstructionSummaryResponseDTO struct {
 // InstructionResponseDTO represents a full instruction returned in HTTP responses.
 // Tools contains the fully resolved ToolResponseDTO objects ([] if empty).
 type InstructionResponseDTO struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	Content   string            `json:"content"`
-	Tools     []ToolResponseDTO `json:"tools"`
-	CreatedBy string            `json:"createdBy"`
-	UpdatedBy string            `json:"updatedBy"`
-	CreatedAt time.Time         `json:"createdAt"`
-	UpdatedAt time.Time         `json:"updatedAt"`
+	Variables []VariableResponseDTO `json:"variables"`
+	ID        string                `json:"id"`
+	Name      string                `json:"name"`
+	Content   string                `json:"content"`
+	Tools     []ToolResponseDTO     `json:"tools"`
+	CreatedBy string                `json:"createdBy"`
+	UpdatedBy string                `json:"updatedBy"`
+	CreatedAt time.Time             `json:"createdAt"`
+	UpdatedAt time.Time             `json:"updatedAt"`
 }

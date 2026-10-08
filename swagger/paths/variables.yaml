@@ -9,7 +9,7 @@
       required: true
       content:
         application/json:
-          schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
+          schema: {$ref: '../schemas/variables.yaml#/CreateVariableRequest'}
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
@@ -76,6 +76,7 @@
       '500': {description: Internal server error}
   put:
     summary: Update variable name and description
+    description: Variable type is immutable. Including type in the request returns HTTP 400.
     operationId: updateVariable
     tags: [Variables]
     parameters:
@@ -87,7 +88,7 @@
       required: true
       content:
         application/json:
-          schema: {$ref: '../schemas/variables.yaml#/VariableRequest'}
+          schema: {$ref: '../schemas/variables.yaml#/UpdateVariableRequest'}
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}

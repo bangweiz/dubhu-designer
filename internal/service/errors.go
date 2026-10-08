@@ -45,3 +45,12 @@ type ErrReferencedToolsNotFound struct {
 func (e *ErrReferencedToolsNotFound) Error() string {
 	return fmt.Sprintf("referenced tools do not exist: %s", strings.Join(e.ToolIDs, ", "))
 }
+
+// ErrReferencedVariablesNotFound identifies invalid, missing, or inaccessible variable IDs.
+type ErrReferencedVariablesNotFound struct {
+	VariableIDs []string
+}
+
+func (e *ErrReferencedVariablesNotFound) Error() string {
+	return fmt.Sprintf("referenced variables do not exist: %s", strings.Join(e.VariableIDs, ", "))
+}

@@ -19,6 +19,7 @@ type ConciergeService struct {
 	conciergeRepo      *repository.ConciergeRepository
 	instructionRepo    *repository.InstructionRepository
 	toolRepo           *repository.ToolRepository
+	variableRepo       *repository.VariableRepository
 	savedConciergeRepo *repository.SavedConciergeVersionRepository
 }
 
@@ -52,11 +53,12 @@ func (s *ConciergeService) UpdateConcierge(ctx context.Context, idStr, ifMatch s
 }
 
 // NewConciergeService creates a new ConciergeService instance.
-func NewConciergeService(conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *ConciergeService {
+func NewConciergeService(conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, variableRepo *repository.VariableRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *ConciergeService {
 	return &ConciergeService{
 		conciergeRepo:      conciergeRepo,
 		instructionRepo:    instructionRepo,
 		toolRepo:           toolRepo,
+		variableRepo:       variableRepo,
 		savedConciergeRepo: savedConciergeRepo,
 	}
 }
@@ -156,8 +158,31 @@ func (s *ConciergeService) buildSnapshot(ctx context.Context, concierge *models.
 		tools = append(tools, tool)
 	}
 
+	variableIDs := []bson.ObjectID{}
+	for _, instruction := range instructions {
+		variableIDs = append(variableIDs, instruction.Variables...)
+	}
+	variableIDs = uniqueObjectIDs(variableIDs)
+	foundVariables, err := s.variableRepo.FindByIDs(ctx, variableIDs)
+	if err != nil {
+		return nil, err
+	}
+	variableMap := make(map[bson.ObjectID]models.Variable, len(foundVariables))
+	for _, variable := range foundVariables {
+		variableMap[variable.ID] = variable
+	}
+	variables := make([]models.Variable, 0, len(variableIDs))
+	for _, id := range variableIDs {
+		variable, ok := variableMap[id]
+		if !ok {
+			return nil, &ErrReferencedVariablesNotFound{VariableIDs: []string{id.Hex()}}
+		}
+		variable.Type = variable.EffectiveType()
+		variables = append(variables, variable)
+	}
 	now := time.Now().UTC()
 	return &models.SavedConciergeVersion{
+		Variables:   variables,
 		ID:          bson.NewObjectID(),
 		ConciergeID: concierge.ID,
 		Name:        concierge.Name, Description: concierge.Description,

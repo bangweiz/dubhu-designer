@@ -3,7 +3,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new instruction
-    description: Creates a new LLM instruction. The content can reference tools using the syntax {{tool:tool_id}}. The service parses these references, verifies that all referenced tools exist in the database, and populates the instruction's tools field with their ObjectIDs. If any referenced tool does not exist, the request is rejected with a 400 Bad Request.
+    description: Creates a new LLM instruction. The content can reference tools using {{tool:toolId}} and variables using {{var:variableId}}. The service parses these references, verifies that all referenced tools and variables exist in the current organisation, and stores the deduplicated reference IDs. If any referenced tool or variable has an invalid ID or does not exist, the request is rejected with a 400 Bad Request.
     operationId: createInstruction
     tags:
       - Instructions
@@ -34,7 +34,7 @@
                 data:
                   $ref: '../schemas/instructions.yaml#/Instruction'
       '400':
-        description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+        description: Bad request (invalid payload, validation failure, or referenced tools or variables do not exist)
         content:
           application/json:
             schema:
@@ -225,7 +225,7 @@
                 data:
                   $ref: '../schemas/instructions.yaml#/Instruction'
       '400':
-        description: Bad request (invalid payload, validation failure, or referenced tools do not exist)
+        description: Bad request (invalid payload, validation failure, or referenced tools or variables do not exist)
         content:
           application/json:
             schema:
