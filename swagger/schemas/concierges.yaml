@@ -17,7 +17,7 @@ CreateConciergeRequest:
 
 ConciergeSummary:
   type: object
-  required: [id, name, description, conciergeVersions, createdAt, updatedAt]
+  required: [id, name, description, conciergeVersions, agents, nextVersion, createdAt, updatedAt]
   properties:
     createdBy: {type: string, readOnly: true, description: "Creating account ID; empty for legacy records with unknown provenance."}
     updatedBy: {type: string, readOnly: true, description: "Last modifying account ID; empty for legacy records with unknown provenance."}
@@ -29,6 +29,14 @@ ConciergeSummary:
       type: string
     description:
       type: string
+    agents:
+      type: array
+      items:
+        $ref: './agents.yaml#/AgentSummary'
+    nextVersion:
+      type: integer
+      minimum: 1
+      description: Sequence number assigned to the next saved snapshot
     conciergeVersions:
       type: array
       items:
@@ -36,7 +44,7 @@ ConciergeSummary:
 
 Concierge:
   type: object
-  required: [id, name, description, conciergeVersions, createdAt, updatedAt]
+  required: [id, name, description, conciergeVersions, agents, nextVersion, createdAt, updatedAt]
   properties:
     createdBy: {type: string, readOnly: true, description: "Creating account ID; empty for legacy records with unknown provenance."}
     updatedBy: {type: string, readOnly: true, description: "Last modifying account ID; empty for legacy records with unknown provenance."}
@@ -48,6 +56,14 @@ Concierge:
       type: string
     description:
       type: string
+    agents:
+      type: array
+      items:
+        $ref: './agents.yaml#/AgentSummary'
+    nextVersion:
+      type: integer
+      minimum: 1
+      description: Sequence number assigned to the next saved snapshot
     conciergeVersions:
       type: array
       items:
@@ -55,7 +71,7 @@ Concierge:
 
 SavedConciergeVersion:
   type: object
-  required: [id, conciergeId, version, saved, agents, instructions, tools, createdAt, updatedAt]
+  required: [id, conciergeId, version, name, description, agents, instructions, tools, createdAt, updatedAt]
   properties:
     id:
       type: string
@@ -64,8 +80,8 @@ SavedConciergeVersion:
       type: string
     version:
       type: integer
-    saved:
-      type: boolean
+    name: {type: string}
+    description: {type: string}
     agents:
       type: array
       items:
@@ -102,6 +118,9 @@ SavedAgent:
   properties:
     id:
       type: string
+    conciergeId:
+      type: string
+      description: Parent concierge ID when present in the snapshot
     name:
       type: string
     description:

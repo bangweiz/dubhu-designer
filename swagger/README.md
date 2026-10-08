@@ -25,3 +25,21 @@ Deploy behind HTTPS. The built-in authentication limit is 30 requests/minute/IP 
 The Postman collection includes authentication requests. Set `rootPassword` and `accountPassword` locally (minimum 15 characters), then create an organisation and log in. Organisation ID and access token are captured automatically; do not commit real passwords or tokens.
 
 Keep this directory structure when loading or publishing the specification: relative `$ref` references require the associated files to be available. Serve the entire `swagger` directory for browser-based documentation tools; uploading only `openapi.yaml` will not include its referenced files.
+
+## Editable concierges and immutable versions
+
+A concierge stores its sole editable configuration, including `agents`, directly. Agent endpoints use `/concierges/{conciergeId}/agents`; no draft ID or `draft` URL selector exists. `GET /concierges/{conciergeId}` returns agent summaries, `nextVersion`, and `conciergeVersions` containing only saved snapshot references. Use agent get-by-ID to resolve current instruction and tool assignments.
+
+`POST /concierge/{conciergeId}:save` snapshots the concierge name, description, agents, and referenced instructions/tools in a transaction. It increments `nextVersion` and appends the saved ID to `conciergeVersions`. Saved versions expose only `GET /concierges/{conciergeId}/concierge-versions/{conciergeVersionId}`; they have no nested agent or mutation endpoints. The former `saved` flag is unnecessary and removed. Concierge ETags are derived from `updatedAt` and change on metadata updates, agent mutations, and saves independently of snapshot sequence numbers. Usage responses identify the current concierge and agent without a draft version ID or number.
+
+### Migrating existing drafts
+
+Before deploying this change, back up the database and stop application writes. Run `mongosh "$MONGODB_URI" --file scripts/migrate-concierge-drafts.js` from the repository root, selecting the application database in the URI. A replica set is required. The script transfers each legacy draft's agents and version sequence into its parent concierge and removes its draft reference. Saved snapshot documents remain unchanged. It preserves the legacy draft collection for rollback and skips already migrated parents on reruns. Existing saved snapshots predate the name/description fields and may omit them.
+
+The old version-scoped agent URLs are no longer registered. In Postman, set `conciergeVersionId` to an ID from a save response or `conciergeVersions`; it is only used for reading saved snapshots.
+
+## Timestamp-based optimistic updates
+
+Editable resources have no numeric revision field. Their strong `ETag` is the quoted UTC `updatedAt` timestamp, for example `"2026-10-08T00:00:00.123Z"`. Send the returned header unchanged as `If-Match` on updates. Old numeric ETags are invalid; fetch the resource again before updating. Invalid or stale timestamps return HTTP 412.
+
+Writes compare the persisted timestamp atomically and advance it by at least one millisecond, including embedded-agent mutations. Agent responses include `createdAt` and `updatedAt`. Saved concierge `version`, saved references, and `nextVersion` remain snapshot sequence numbers, not optimistic revision fields. Legacy numeric revision properties in existing documents are ignored; no database migration is required for timestamp concurrency.

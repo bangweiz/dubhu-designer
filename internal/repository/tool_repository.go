@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -12,7 +13,7 @@ import (
 
 const collectionTools = "tools"
 
-// ListReferencingInstructions includes instructions even when no draft agent assigns them.
+// ListReferencingInstructions includes instructions even when no concierge agent assigns them.
 func (r *ToolRepository) ListReferencingInstructions(ctx context.Context, id bson.ObjectID) ([]models.Instruction, error) {
 	cursor, err := r.collection.sibling(collectionInstructions).Find(ctx, bson.M{"tools": id}, options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}))
 	if err != nil {
@@ -34,14 +35,10 @@ func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, 
 		bson.D{{Key: "$match", Value: filter}},
 		bson.D{{Key: "$unwind", Value: "$agents"}},
 		bson.D{{Key: "$match", Value: filter}},
-		bson.D{{Key: "$project", Value: bson.M{"_id": 0, "concierge_id": 1, "concierge_version_id": "$_id", "version": 1, "agent_id": "$agents._id", "agent_name": "$agents.name"}}},
-		bson.D{{Key: "$lookup", Value: bson.M{"from": collectionConcierges, "localField": "concierge_id", "foreignField": "_id", "as": "concierge"}}},
-		bson.D{{Key: "$unwind", Value: "$concierge"}},
-		bson.D{{Key: "$set", Value: bson.M{"concierge_name": "$concierge.name"}}},
-		bson.D{{Key: "$unset", Value: "concierge"}},
-		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+		bson.D{{Key: "$project", Value: bson.M{"_id": 0, "concierge_id": "$_id", "concierge_name": "$name", "agent_id": "$agents._id", "agent_name": "$agents.name"}}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
 	}
-	cursor, err := r.collection.sibling(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	cursor, err := r.collection.sibling(collectionConcierges).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate tool agent usages: %w", err)
 	}
@@ -122,17 +119,16 @@ func (r *ToolRepository) List(ctx context.Context) ([]models.Tool, error) {
 }
 
 // Update updates an existing Tool document using optimistic concurrency control.
-// The document must match both id and expectedVersion. On match, version increments by 1.
+// The document must match both id and expectedUpdatedAt. On match, updated_at advances.
 // Returns the updated Tool document after update.
-func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedVersion int, updateDoc bson.M) (*models.Tool, error) {
+func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, updateDoc bson.M) (*models.Tool, error) {
 	filter := bson.M{
-		"_id":     id,
-		"version": expectedVersion,
+		"_id":        id,
+		"updated_at": expectedUpdatedAt,
 	}
 
 	update := bson.M{
 		"$set": updateDoc,
-		"$inc": bson.M{"version": 1},
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -141,7 +137,7 @@ func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedV
 	err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedTool)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, ErrVersionConflict
+			return nil, ErrUpdateConflict
 		}
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrToolNameExists

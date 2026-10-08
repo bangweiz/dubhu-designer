@@ -6,12 +6,10 @@ import (
 )
 
 type InstructionUsageResponseDTO struct {
-	ConciergeID        string `json:"conciergeId"`
-	ConciergeName      string `json:"conciergeName"`
-	ConciergeVersionID string `json:"conciergeVersionId"`
-	Version            int    `json:"version"`
-	AgentID            string `json:"agentId"`
-	AgentName          string `json:"agentName"`
+	ConciergeID   string `json:"conciergeId"`
+	ConciergeName string `json:"conciergeName"`
+	AgentID       string `json:"agentId"`
+	AgentName     string `json:"agentName"`
 }
 
 // --- Instruction Request DTOs ---
@@ -48,7 +46,6 @@ type InstructionSummaryResponseDTO struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Content   string    `json:"content"`
-	Version   int       `json:"-"`
 	CreatedBy string    `json:"createdBy"`
 	UpdatedBy string    `json:"updatedBy"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -62,7 +59,6 @@ type InstructionResponseDTO struct {
 	Name      string            `json:"name"`
 	Content   string            `json:"content"`
 	Tools     []ToolResponseDTO `json:"tools"`
-	Version   int               `json:"-"`
 	CreatedBy string            `json:"createdBy"`
 	UpdatedBy string            `json:"updatedBy"`
 	CreatedAt time.Time         `json:"createdAt"`

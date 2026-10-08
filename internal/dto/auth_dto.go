@@ -50,15 +50,15 @@ type LoginDTO struct {
 func (d *LoginDTO) Trim() { d.Email = strings.ToLower(strings.TrimSpace(d.Email)) }
 
 type AccountResponseDTO struct {
-	ID             string             `json:"id"`
-	OrganisationID string             `json:"organisationId"`
-	Name           string             `json:"name"`
-	Email          string             `json:"email"`
-	Role           models.AccountRole `json:"role"`
-	CreatedBy      string             `json:"createdBy"`
-	UpdatedBy      string             `json:"updatedBy"`
-	CreatedAt      time.Time          `json:"createdAt"`
-	UpdatedAt      time.Time          `json:"updatedAt"`
+	ID             string    `json:"id"`
+	OrganisationID string    `json:"organisationId"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	Role           string    `json:"role"`
+	CreatedBy      string    `json:"createdBy"`
+	UpdatedBy      string    `json:"updatedBy"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 type OrganisationResponseDTO struct {

@@ -35,7 +35,7 @@
         description: Tool created successfully
         headers:
           ETag:
-            description: Strong ETag for the created tool representation
+            description: Strong ETag derived from updatedAt for the created tool representation
             schema:
               type: string
         content:
@@ -105,7 +105,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: List tool usages
-    description: Returns one entry per draft agent that assigns this tool directly or assigns an instruction referencing the tool. Multiple reference paths to the same agent are deduplicated. Saved snapshots and unassigned instructions are excluded. An unused tool returns an empty array.
+    description: Returns one entry per concierge agent that assigns this tool directly or assigns an instruction referencing the tool. Multiple reference paths to the same agent are deduplicated. Saved snapshots and unassigned instructions are excluded. An unused tool returns an empty array.
     operationId: listToolUsages
     tags: [Tools]
     parameters:
@@ -117,7 +117,7 @@
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
-        description: Tool usages ordered by concierge name, version, and agent name.
+        description: Tool usages ordered by concierge name and agent name.
         content:
           application/json:
             schema:
@@ -154,7 +154,7 @@
         description: Tool retrieved successfully
         headers:
           ETag:
-            description: Strong ETag for the current tool representation
+            description: Strong ETag derived from updatedAt for the current tool representation
             schema:
               type: string
         content:
@@ -230,7 +230,7 @@
         description: Tool updated successfully
         headers:
           ETag:
-            description: Strong ETag for the updated tool representation
+            description: Strong ETag derived from updatedAt for the updated tool representation
             schema:
               type: string
         content:

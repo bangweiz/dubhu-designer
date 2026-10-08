@@ -64,12 +64,12 @@ func (s *VariableService) UpdateVariable(ctx context.Context, idStr, ifMatch str
 	if err != nil {
 		return nil, ErrVariableNotFound
 	}
-	version, err := etag.Parse(ifMatch)
+	updatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrVariableETagMismatch
 	}
-	e, err := s.variableRepo.Update(ctx, id, version, input.Name, input.Description)
-	if errors.Is(err, repository.ErrVersionConflict) {
+	e, err := s.variableRepo.Update(ctx, id, updatedAt, input.Name, input.Description)
+	if errors.Is(err, repository.ErrUpdateConflict) {
 		existing, lookupErr := s.variableRepo.GetByID(ctx, id)
 		if lookupErr != nil {
 			return nil, lookupErr

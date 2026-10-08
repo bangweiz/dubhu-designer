@@ -16,11 +16,10 @@ import (
 
 // ConciergeService handles business logic operations for concierges.
 type ConciergeService struct {
-	conciergeRepo        *repository.ConciergeRepository
-	conciergeVersionRepo *repository.DraftConciergeVersionRepository
-	instructionRepo      *repository.InstructionRepository
-	toolRepo             *repository.ToolRepository
-	savedConciergeRepo   *repository.SavedConciergeVersionRepository
+	conciergeRepo      *repository.ConciergeRepository
+	instructionRepo    *repository.InstructionRepository
+	toolRepo           *repository.ToolRepository
+	savedConciergeRepo *repository.SavedConciergeVersionRepository
 }
 
 func (s *ConciergeService) UpdateConcierge(ctx context.Context, idStr, ifMatch string, input dto.UpdateConciergeDTO) (*dto.ConciergeResponseDTO, error) {
@@ -28,12 +27,12 @@ func (s *ConciergeService) UpdateConcierge(ctx context.Context, idStr, ifMatch s
 	if err != nil {
 		return nil, ErrConciergeNotFound
 	}
-	version, err := etag.Parse(ifMatch)
+	updatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrConciergeETagMismatch
 	}
-	c, err := s.conciergeRepo.Update(ctx, id, version, input.Name, input.Description)
-	if errors.Is(err, repository.ErrVersionConflict) {
+	c, err := s.conciergeRepo.Update(ctx, id, updatedAt, input.Name, input.Description)
+	if errors.Is(err, repository.ErrUpdateConflict) {
 		existing, lookupErr := s.conciergeRepo.GetByID(ctx, id)
 		if lookupErr != nil {
 			return nil, lookupErr
@@ -53,24 +52,23 @@ func (s *ConciergeService) UpdateConcierge(ctx context.Context, idStr, ifMatch s
 }
 
 // NewConciergeService creates a new ConciergeService instance.
-func NewConciergeService(conciergeRepo *repository.ConciergeRepository, conciergeVersionRepo *repository.DraftConciergeVersionRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *ConciergeService {
+func NewConciergeService(conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *ConciergeService {
 	return &ConciergeService{
-		conciergeRepo:        conciergeRepo,
-		conciergeVersionRepo: conciergeVersionRepo,
-		instructionRepo:      instructionRepo,
-		toolRepo:             toolRepo,
-		savedConciergeRepo:   savedConciergeRepo,
+		conciergeRepo:      conciergeRepo,
+		instructionRepo:    instructionRepo,
+		toolRepo:           toolRepo,
+		savedConciergeRepo: savedConciergeRepo,
 	}
 }
 
-// SaveConcierge snapshots the current customer-facing version and advances the draft version.
-func (s *ConciergeService) SaveConcierge(ctx context.Context, idStr string) (*models.SavedConciergeVersion, error) {
+// SaveConcierge snapshots the current customer-facing version and advances the snapshot sequence.
+func (s *ConciergeService) SaveConcierge(ctx context.Context, idStr string) (*dto.SavedConciergeVersionResponseDTO, error) {
 	conciergeID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrConciergeNotFound
 	}
-	return util.RunInTransaction(ctx, s.savedConciergeRepo.Client(), func(txCtx context.Context) (*models.SavedConciergeVersion, error) {
-		concierge, err := s.conciergeVersionRepo.GetByConciergeID(txCtx, conciergeID)
+	return util.RunInTransaction(ctx, s.savedConciergeRepo.Client(), func(txCtx context.Context) (*dto.SavedConciergeVersionResponseDTO, error) {
+		concierge, err := s.conciergeRepo.GetByID(txCtx, conciergeID)
 		if err != nil {
 			return nil, err
 		}
@@ -84,59 +82,36 @@ func (s *ConciergeService) SaveConcierge(ctx context.Context, idStr string) (*mo
 		if err := s.savedConciergeRepo.Create(txCtx, saved); err != nil {
 			return nil, err
 		}
-		if err := s.conciergeVersionRepo.Advance(txCtx, conciergeID); err != nil {
-			if errors.Is(err, repository.ErrConciergeNotFound) {
-				return nil, ErrConciergeNotFound
-			}
+		if err := s.conciergeRepo.RecordSavedVersion(txCtx, conciergeID, saved.ID, concierge.NextVersion, concierge.UpdatedAt); err != nil {
 			return nil, err
 		}
-		if err := s.conciergeRepo.RecordSavedVersion(txCtx, conciergeID, concierge.ID, saved.ID, concierge.Version); err != nil {
-			return nil, err
-		}
-		return saved, nil
+		response := mapper.ToSavedConciergeVersionResponseDTO(saved)
+		return &response, nil
 	})
 }
 
-// GetSavedConciergeVersion retrieves an immutable customer-facing version.
-func (s *ConciergeService) GetConciergeVersion(ctx context.Context, conciergeIDStr, versionIDStr string) (*models.SavedConciergeVersion, error) {
+// GetConciergeVersion retrieves an immutable customer-facing version.
+func (s *ConciergeService) GetConciergeVersion(ctx context.Context, conciergeIDStr, versionIDStr string) (*dto.SavedConciergeVersionResponseDTO, error) {
 	id, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return nil, ErrConciergeNotFound
 	}
-	if versionIDStr != "draft" {
-		versionID, err := bson.ObjectIDFromHex(versionIDStr)
-		if err != nil {
-			return nil, ErrConciergeVersionNotFound
-		}
-		saved, err := s.savedConciergeRepo.GetByID(ctx, id, versionID)
-		if err != nil {
-			return nil, err
-		}
-		if saved != nil {
-			return saved, nil
-		}
-	}
-	draft, err := s.conciergeVersionRepo.GetByConciergeID(ctx, id)
+	versionID, err := bson.ObjectIDFromHex(versionIDStr)
 	if err != nil {
-		return nil, err
-	}
-	if draft == nil || (versionIDStr != "draft" && draft.ID.Hex() != versionIDStr) {
 		return nil, ErrConciergeVersionNotFound
 	}
-	response, err := s.buildSnapshot(ctx, draft)
+	saved, err := s.savedConciergeRepo.GetByID(ctx, id, versionID)
 	if err != nil {
 		return nil, err
 	}
-	response.ID = draft.ID
-	response.CreatedBy = draft.CreatedBy
-	response.UpdatedBy = draft.UpdatedBy
-	response.CreatedAt = draft.CreatedAt
-	response.UpdatedAt = draft.UpdatedAt
-	response.Saved = false
-	return response, nil
+	if saved == nil {
+		return nil, ErrConciergeVersionNotFound
+	}
+	response := mapper.ToSavedConciergeVersionResponseDTO(saved)
+	return &response, nil
 }
 
-func (s *ConciergeService) buildSnapshot(ctx context.Context, concierge *models.DraftConciergeVersion) (*models.SavedConciergeVersion, error) {
+func (s *ConciergeService) buildSnapshot(ctx context.Context, concierge *models.Concierge) (*models.SavedConciergeVersion, error) {
 	instructionIDs := make([]bson.ObjectID, 0)
 	for _, agent := range concierge.Agents {
 		instructionIDs = append(instructionIDs, agent.Instructions...)
@@ -181,10 +156,16 @@ func (s *ConciergeService) buildSnapshot(ctx context.Context, concierge *models.
 		tools = append(tools, tool)
 	}
 
+	now := time.Now().UTC()
 	return &models.SavedConciergeVersion{
-		ID: bson.NewObjectID(), ConciergeID: concierge.ConciergeID, Version: concierge.Version,
+		ID:          bson.NewObjectID(),
+		ConciergeID: concierge.ID,
+		Name:        concierge.Name, Description: concierge.Description,
+		Version:      concierge.NextVersion,
 		Agents:       concierge.Agents,
-		Instructions: instructions, Tools: tools, CreatedAt: concierge.CreatedAt, UpdatedAt: concierge.UpdatedAt, Saved: true,
+		Instructions: instructions,
+		Tools:        tools,
+		AuditFields:  models.AuditFields{CreatedAt: now, UpdatedAt: now},
 	}, nil
 }
 
@@ -201,28 +182,20 @@ func uniqueObjectIDs(ids []bson.ObjectID) []bson.ObjectID {
 	return unique
 }
 
-// CreateConcierge maps DTO to a new Concierge entity (version 1), persists it through repository,
+// CreateConcierge maps DTO to a new Concierge entity (with audit timestamps), persists it through repository,
 // and returns the mapped ConciergeResponseDTO.
 func (s *ConciergeService) CreateConcierge(ctx context.Context, input dto.CreateConciergeDTO) (*dto.ConciergeResponseDTO, error) {
 
-	return util.RunInTransaction(ctx, s.savedConciergeRepo.Client(), func(txCtx context.Context) (*dto.ConciergeResponseDTO, error) {
-		entity := mapper.ToInitialConciergeEntity(input)
-		now := time.Now().UTC()
-		draft := &models.DraftConciergeVersion{ID: bson.NewObjectID(), ConciergeID: entity.ID, Agents: []models.Agent{}, Version: 1, ETagVersion: 1, CreatedAt: now, UpdatedAt: now}
-		entity.ConciergeVersions = []models.ConciergeVersionReference{{ConciergeVersionID: draft.ID, Version: 1}}
-		created, err := s.conciergeRepo.Create(txCtx, entity)
-		if err != nil {
-			if errors.Is(err, repository.ErrConciergeNameExists) {
-				return nil, ErrConciergeNameExists
-			}
-			return nil, err
-		}
-		if err := s.conciergeVersionRepo.Create(txCtx, draft); err != nil {
-			return nil, err
-		}
-		response := mapper.ToConciergeResponseDTO(created)
-		return &response, nil
-	})
+	entity := mapper.ToInitialConciergeEntity(input)
+	created, err := s.conciergeRepo.Create(ctx, entity)
+	if errors.Is(err, repository.ErrConciergeNameExists) {
+		return nil, ErrConciergeNameExists
+	}
+	if err != nil {
+		return nil, err
+	}
+	response := mapper.ToConciergeResponseDTO(created)
+	return &response, nil
 }
 
 // GetConciergeByID retrieves a concierge by its hex ObjectID string and returns the mapped ConciergeResponseDTO.

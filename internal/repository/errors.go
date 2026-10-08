@@ -12,14 +12,14 @@ var (
 	ErrConciergeNameExists    = errors.New("concierge name already exists")
 	ErrConciergeNotFound      = errors.New("concierge not found")
 
-	ErrAgentNameExists      = errors.New("agent name already exists")
-	ErrAgentNotFound        = errors.New("agent not found")
-	ErrAgentVersionConflict = errors.New("agent version conflict")
+	ErrAgentNameExists     = errors.New("agent name already exists")
+	ErrAgentNotFound       = errors.New("agent not found")
+	ErrAgentUpdateConflict = errors.New("agent update conflict")
 
 	ErrInstructionNameExists = errors.New("instruction name already exists")
 	ErrInstructionNotFound   = errors.New("instruction not found")
-	ErrInstructionConflict   = errors.New("instruction version conflict")
+	ErrInstructionConflict   = errors.New("instruction update conflict")
 
-	ErrToolNameExists  = errors.New("tool name already exists")
-	ErrVersionConflict = errors.New("version conflict")
+	ErrToolNameExists = errors.New("tool name already exists")
+	ErrUpdateConflict = errors.New("update conflict")
 )

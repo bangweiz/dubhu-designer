@@ -14,7 +14,6 @@ func ToInstructionUsageResponseDTOList(usages []repository.InstructionUsageResul
 	for _, usage := range usages {
 		result = append(result, dto.InstructionUsageResponseDTO{
 			ConciergeID: usage.ConciergeID.Hex(), ConciergeName: usage.ConciergeName,
-			ConciergeVersionID: usage.ConciergeVersionID.Hex(), Version: usage.Version,
 			AgentID: usage.AgentID.Hex(), AgentName: usage.AgentName,
 		})
 	}
@@ -22,22 +21,14 @@ func ToInstructionUsageResponseDTOList(usages []repository.InstructionUsageResul
 }
 
 // ToInitialInstructionEntity converts a CreateInstructionDTO into a new Instruction entity
-// with version 1, a new ObjectID, and UTC timestamps.
+// with a new ObjectID, and UTC timestamps.
 func ToInitialInstructionEntity(input dto.CreateInstructionDTO, toolIDs []bson.ObjectID) *models.Instruction {
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Millisecond)
 	if toolIDs == nil {
 		toolIDs = []bson.ObjectID{}
 	}
 
-	return &models.Instruction{
-		ID:        bson.NewObjectID(),
-		Name:      input.Name,
-		Content:   input.Content,
-		Tools:     toolIDs,
-		Version:   1,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
+	return &models.Instruction{ID: bson.NewObjectID(), Name: input.Name, Content: input.Content, Tools: toolIDs, AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now}}
 }
 
 // ToInstructionSummaryResponseDTO converts a domain Instruction model to InstructionSummaryResponseDTO.
@@ -46,7 +37,6 @@ func ToInstructionSummaryResponseDTO(inst *models.Instruction) dto.InstructionSu
 		ID:        inst.ID.Hex(),
 		Name:      inst.Name,
 		Content:   inst.Content,
-		Version:   inst.Version,
 		CreatedBy: auditID(inst.CreatedBy), UpdatedBy: auditID(inst.UpdatedBy), CreatedAt: inst.CreatedAt,
 		UpdatedAt: inst.UpdatedAt,
 	}
@@ -81,7 +71,6 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool) dto
 		Name:      inst.Name,
 		Content:   inst.Content,
 		Tools:     toolDTOs,
-		Version:   inst.Version,
 		CreatedBy: auditID(inst.CreatedBy), UpdatedBy: auditID(inst.UpdatedBy), CreatedAt: inst.CreatedAt,
 		UpdatedAt: inst.UpdatedAt,
 	}

@@ -9,10 +9,10 @@ import (
 )
 
 func ToInitialVariableEntity(input dto.CreateVariableDTO) *models.Variable {
-	now := time.Now().UTC().Truncate(time.Millisecond)
-	return &models.Variable{ID: bson.NewObjectID(), Name: input.Name, Description: input.Description, Version: 1, CreatedAt: now, UpdatedAt: now}
+	now := time.Now().UTC().Truncate(time.Millisecond).Truncate(time.Millisecond)
+	return &models.Variable{ID: bson.NewObjectID(), Name: input.Name, Description: input.Description, AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now}}
 }
 
 func ToVariableResponseDTO(e *models.Variable) dto.VariableResponseDTO {
-	return dto.VariableResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, Version: e.Version, CreatedBy: auditID(e.CreatedBy), UpdatedBy: auditID(e.UpdatedBy), CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
+	return dto.VariableResponseDTO{ID: e.ID.Hex(), Name: e.Name, Description: e.Description, CreatedBy: auditID(e.CreatedBy), UpdatedBy: auditID(e.UpdatedBy), CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
 }

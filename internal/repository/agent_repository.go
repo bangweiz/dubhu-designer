@@ -13,21 +13,21 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-// AgentRepository manages Agent embedded subdocuments within DraftConciergeVersion documents.
+// AgentRepository manages Agent embedded subdocuments within Concierge documents.
 type AgentRepository struct {
 	collection *scopedCollection
 }
 
-// NewAgentRepository creates a new AgentRepository instance pointing to the concierge_versions collection.
+// NewAgentRepository creates a new AgentRepository instance pointing to the concierges collection.
 func NewAgentRepository(database *mongo.Database) *AgentRepository {
 	return &AgentRepository{
-		collection: newScopedCollection(database, collectionDraftConciergeVersions),
+		collection: newScopedCollection(database, collectionConcierges),
 	}
 }
 
 // InitIndexes initializes any required indexes for agent operations.
 func (r *AgentRepository) InitIndexes(ctx context.Context) error {
-	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "agents.name", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{"agents.0": bson.M{"$exists": true}})})
+	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "_id", Value: 1}, {Key: "agents.name", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{"agents.0": bson.M{"$exists": true}})})
 	return err
 }
 
@@ -42,8 +42,8 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 	agent.CreatedBy = principal.AccountID
 	agent.UpdatedBy = principal.AccountID
 	filter := bson.M{
-		"concierge_id": conciergeID,
-		"agents.name":  bson.M{"$ne": agent.Name},
+		"_id":         conciergeID,
+		"agents.name": bson.M{"$ne": agent.Name},
 	}
 	update := bson.M{
 		"$push": bson.M{"agents": agent},
@@ -59,7 +59,7 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 	}
 
 	if res.MatchedCount == 0 {
-		count, err := r.collection.CountDocuments(ctx, bson.M{"concierge_id": conciergeID})
+		count, err := r.collection.CountDocuments(ctx, bson.M{"_id": conciergeID})
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify concierge: %w", err)
 		}
@@ -77,8 +77,8 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 // Returns ErrConciergeNotFound if concierge does not exist.
 // Returns ErrAgentNotFound if agent does not exist in the concierge.
 func (r *AgentRepository) GetByIDAndConciergeID(ctx context.Context, agentID bson.ObjectID, conciergeID bson.ObjectID) (*models.Agent, error) {
-	var concierge models.DraftConciergeVersion
-	err := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&concierge)
+	var concierge models.Concierge
+	err := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&concierge)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrConciergeNotFound
@@ -100,7 +100,7 @@ func (r *AgentRepository) GetByIDAndConciergeID(ctx context.Context, agentID bso
 // Returns ErrAgentNotFound if the agent does not exist in the concierge.
 func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.ObjectID, conciergeID bson.ObjectID) (*models.PopulatedAgent, error) {
 	pipeline := mongo.Pipeline{
-		bson.D{{Key: "$match", Value: bson.M{"concierge_id": conciergeID}}},
+		bson.D{{Key: "$match", Value: bson.M{"_id": conciergeID}}},
 		bson.D{{Key: "$set", Value: bson.M{
 			"selected_agent": bson.M{
 				"$arrayElemAt": []any{
@@ -115,14 +115,13 @@ func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.Obj
 		}}},
 		bson.D{{Key: "$project", Value: bson.M{
 			"_id":          "$selected_agent._id",
-			"concierge_id": "$concierge_id",
+			"concierge_id": "$_id",
 			"name":         "$selected_agent.name",
 			"description":  "$selected_agent.description",
 			"goal":         "$selected_agent.goal",
 			"model":        "$selected_agent.model",
 			"instructions": "$selected_agent.instructions",
 			"tools":        "$selected_agent.tools",
-			"version":      "$selected_agent.version",
 			"created_by":   "$selected_agent.created_by",
 			"updated_by":   "$selected_agent.updated_by",
 			"created_at":   "$selected_agent.created_at",
@@ -173,8 +172,8 @@ func (r *AgentRepository) GetByIDPopulated(ctx context.Context, agentID bson.Obj
 // ListByConciergeID retrieves all Agent subdocuments from a Concierge.
 // Returns ErrConciergeNotFound if concierge does not exist.
 func (r *AgentRepository) ListByConciergeID(ctx context.Context, conciergeID bson.ObjectID) ([]models.Agent, error) {
-	var concierge models.DraftConciergeVersion
-	err := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&concierge)
+	var concierge models.Concierge
+	err := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&concierge)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrConciergeNotFound
@@ -193,17 +192,17 @@ func (r *AgentRepository) ListByConciergeID(ctx context.Context, conciergeID bso
 
 // Update atomically updates an Agent subdocument within a Concierge.
 // Matches by conciergeID and agentID, checks that no other agent in this concierge has the same name,
-// updates agent fields (name, description, goal, model), increments agent version by 1,
+// updates agent fields (name, description, goal, model), advances agent updated_at,
 // and updates the concierge's updated_at timestamp.
 // Returns ErrConciergeNotFound if the parent concierge does not exist.
 // Returns ErrAgentNotFound if the agent does not exist in the concierge.
 // Returns ErrAgentNameExists if another agent in this concierge already has the new name.
-func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, expectedVersion int, agent *models.Agent) (*models.Agent, error) {
+func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, expectedUpdatedAt time.Time, agent *models.Agent) (*models.Agent, error) {
 	now := time.Now().UTC()
 	filter := bson.M{
-		"concierge_id": conciergeID,
+		"_id": conciergeID,
 		"$and": []bson.M{
-			{"agents": bson.M{"$elemMatch": bson.M{"_id": agentID, "version": expectedVersion}}},
+			{"agents": bson.M{"$elemMatch": bson.M{"_id": agentID, "updated_at": expectedUpdatedAt}}},
 			{
 				"agents": bson.M{
 					"$not": bson.M{
@@ -226,24 +225,21 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 			"agents.$[elem].updated_at":  now,
 			"updated_at":                 now,
 		},
-		"$inc": bson.M{
-			"agents.$[elem].version": 1,
-		},
 	}
 
 	opts := options.FindOneAndUpdate().
 		SetReturnDocument(options.After).
-		SetArrayFilters([]any{bson.M{"elem._id": agentID, "elem.version": expectedVersion}})
+		SetArrayFilters([]any{bson.M{"elem._id": agentID, "elem.updated_at": expectedUpdatedAt}})
 
-	var concierge models.DraftConciergeVersion
+	var concierge models.Concierge
 	err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&concierge)
 	if mongo.IsDuplicateKeyError(err) {
 		return nil, ErrAgentNameExists
 	}
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			var existing models.DraftConciergeVersion
-			findErr := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&existing)
+			var existing models.Concierge
+			findErr := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&existing)
 			if findErr != nil {
 				if errors.Is(findErr, mongo.ErrNoDocuments) {
 					return nil, ErrConciergeNotFound
@@ -261,8 +257,8 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 			if existingAgent == nil {
 				return nil, ErrAgentNotFound
 			}
-			if existingAgent.Version != expectedVersion {
-				return nil, ErrAgentVersionConflict
+			if !existingAgent.UpdatedAt.Equal(expectedUpdatedAt) {
+				return nil, ErrAgentUpdateConflict
 			}
 
 			return nil, ErrAgentNameExists
@@ -287,7 +283,7 @@ func (r *AgentRepository) Update(ctx context.Context, conciergeID bson.ObjectID,
 func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, instructionID bson.ObjectID) error {
 	now := time.Now().UTC()
 	filter := bson.M{
-		"concierge_id": conciergeID,
+		"_id": conciergeID,
 		"agents": bson.M{
 			"$elemMatch": bson.M{
 				"_id":          agentID,
@@ -304,9 +300,6 @@ func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bso
 			"agents.$[elem].updated_at": now,
 			"updated_at":                now,
 		},
-		"$inc": bson.M{
-			"agents.$[elem].version": 1,
-		},
 	}
 
 	opts := options.UpdateOne().
@@ -321,8 +314,8 @@ func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bso
 		return nil
 	}
 
-	var existing models.DraftConciergeVersion
-	findErr := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&existing)
+	var existing models.Concierge
+	findErr := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&existing)
 	if findErr != nil {
 		if errors.Is(findErr, mongo.ErrNoDocuments) {
 			return ErrConciergeNotFound
@@ -345,7 +338,7 @@ func (r *AgentRepository) AssignInstruction(ctx context.Context, conciergeID bso
 func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID bson.ObjectID, agentID bson.ObjectID, instructionID bson.ObjectID) error {
 	now := time.Now().UTC()
 	filter := bson.M{
-		"concierge_id": conciergeID,
+		"_id": conciergeID,
 		"agents": bson.M{
 			"$elemMatch": bson.M{
 				"_id":          agentID,
@@ -362,9 +355,6 @@ func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID b
 			"agents.$[elem].updated_at": now,
 			"updated_at":                now,
 		},
-		"$inc": bson.M{
-			"agents.$[elem].version": 1,
-		},
 	}
 
 	opts := options.UpdateOne().
@@ -379,8 +369,8 @@ func (r *AgentRepository) UnassignInstruction(ctx context.Context, conciergeID b
 		return nil
 	}
 
-	var existing models.DraftConciergeVersion
-	findErr := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&existing)
+	var existing models.Concierge
+	findErr := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&existing)
 	if findErr != nil {
 		if errors.Is(findErr, mongo.ErrNoDocuments) {
 			return ErrConciergeNotFound
@@ -409,7 +399,7 @@ func (r *AgentRepository) UnassignTool(ctx context.Context, conciergeID bson.Obj
 func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
 	now := time.Now().UTC()
 	filter := bson.M{
-		"concierge_id": conciergeID,
+		"_id": conciergeID,
 		"agents": bson.M{"$elemMatch": bson.M{
 			"_id": agentID,
 			field: bson.M{"$ne": referenceID},
@@ -421,7 +411,6 @@ func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agen
 			"agents.$[elem].updated_at": now,
 			"updated_at":                now,
 		},
-		"$inc": bson.M{"agents.$[elem].version": 1},
 	}
 	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
 	res, err := r.collection.UpdateOne(ctx, filter, update, opts)
@@ -437,7 +426,7 @@ func (r *AgentRepository) assignReference(ctx context.Context, conciergeID, agen
 func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, agentID, referenceID bson.ObjectID, field string) error {
 	now := time.Now().UTC()
 	filter := bson.M{
-		"concierge_id": conciergeID,
+		"_id": conciergeID,
 		"agents": bson.M{"$elemMatch": bson.M{
 			"_id": agentID,
 			field: referenceID,
@@ -449,7 +438,6 @@ func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, ag
 			"agents.$[elem].updated_at": now,
 			"updated_at":                now,
 		},
-		"$inc": bson.M{"agents.$[elem].version": 1},
 	}
 	opts := options.UpdateOne().SetArrayFilters([]any{bson.M{"elem._id": agentID}})
 	res, err := r.collection.UpdateOne(ctx, filter, update, opts)
@@ -463,8 +451,8 @@ func (r *AgentRepository) unassignReference(ctx context.Context, conciergeID, ag
 }
 
 func (r *AgentRepository) verifyAgentExists(ctx context.Context, conciergeID, agentID bson.ObjectID) error {
-	var concierge models.DraftConciergeVersion
-	if err := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID}).Decode(&concierge); err != nil {
+	var concierge models.Concierge
+	if err := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&concierge); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return ErrConciergeNotFound
 		}

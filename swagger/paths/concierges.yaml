@@ -98,7 +98,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   put:
     summary: Update concierge name and description
-    description: Updates only concierge metadata, independently of working and saved concierge versions.
+    description: Updates the editable concierge name and description. Existing saved snapshots remain immutable.
     operationId: updateConcierge
     tags: [Concierges]
     parameters:
@@ -110,7 +110,7 @@
         in: header
         required: true
         description: Strong ETag returned by concierge GET or create.
-        schema: {type: string, example: '"1"'}
+        schema: {type: string, example: '"2026-10-08T00:00:00.123Z"'}
     requestBody:
       required: true
       content:
@@ -193,7 +193,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Save an immutable concierge snapshot
-    description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the draft concierge to the next version.
+    description: Stores the current customer-facing version as a self-contained immutable snapshot, then advances the concierge snapshot sequence.
     operationId: saveConcierge
     tags:
       - Concierges
@@ -201,7 +201,7 @@
       - name: conciergeId
         in: path
         required: true
-        description: Hexadecimal MongoDB ObjectID of the draft concierge
+        description: Hexadecimal MongoDB ObjectID of the concierge
         schema:
           type: string
           example: "651da3b57f8641a27e36c579"
@@ -234,7 +234,7 @@
   parameters:
     - $ref: '../parameters.yaml#/OrganisationID'
   get:
-    summary: Get a concierge version
+    summary: Get an immutable saved concierge version
     operationId: getConciergeVersion
     tags:
       - Concierges
@@ -247,15 +247,15 @@
       - name: conciergeVersionId
         in: path
         required: true
-        description: draft or a version ID returned in Concierge.conciergeVersions
+        description: Saved version ID returned in Concierge.conciergeVersions
         schema:
           type: string
-          example: draft
+          example: "651da3b57f8641a27e36c579"
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
-        description: Working concierge or immutable snapshot
+        description: Immutable saved snapshot
         content:
           application/json:
             schema:

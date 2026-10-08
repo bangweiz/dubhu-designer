@@ -62,11 +62,11 @@ func (r *VariableRepository) List(ctx context.Context) ([]models.Variable, error
 	return result, nil
 }
 
-func (r *VariableRepository) Update(ctx context.Context, id bson.ObjectID, version int, name, description string) (*models.Variable, error) {
+func (r *VariableRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, name, description string) (*models.Variable, error) {
 	var e models.Variable
-	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id, "version": version}, bson.M{"$set": bson.M{"name": name, "description": description, "updated_at": time.Now().UTC().Truncate(time.Millisecond)}, "$inc": bson.M{"version": 1}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&e)
+	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id, "updated_at": expectedUpdatedAt}, bson.M{"$set": bson.M{"name": name, "description": description, "updated_at": time.Now().UTC().Truncate(time.Millisecond)}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&e)
 	if err == mongo.ErrNoDocuments {
-		return nil, ErrVersionConflict
+		return nil, ErrUpdateConflict
 	}
 	if mongo.IsDuplicateKeyError(err) {
 		return nil, ErrVariableNameExists

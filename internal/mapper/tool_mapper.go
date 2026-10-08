@@ -9,19 +9,17 @@ import (
 )
 
 // ToInitialToolEntity converts a pre-trimmed CreateToolDTO into a newly initialized Tool entity
-// with initial version 1, a new ObjectID, and UTC timestamps.
+// with a new ObjectID, and UTC timestamps.
 func ToInitialToolEntity(input dto.CreateToolDTO) *models.Tool {
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Millisecond)
 
 	return &models.Tool{
 		ID:          bson.NewObjectID(),
 		Name:        input.Name,
 		Description: input.Description,
-		Version:     1,
 		Inputs:      ToToolInputs(input.Inputs),
 		Outputs:     ToToolOutputs(input.Outputs),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now},
 	}
 }
 
@@ -76,7 +74,6 @@ func ToToolResponseDTO(tool *models.Tool) dto.ToolResponseDTO {
 		Description: tool.Description,
 		Inputs:      inputs,
 		Outputs:     outputs,
-		Version:     tool.Version,
 		CreatedBy:   auditID(tool.CreatedBy), UpdatedBy: auditID(tool.UpdatedBy), CreatedAt: tool.CreatedAt,
 		UpdatedAt: tool.UpdatedAt,
 	}

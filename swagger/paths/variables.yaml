@@ -17,8 +17,8 @@
         description: Variable created
         headers:
           ETag:
-            description: Strong optimistic-lock ETag for subsequent updates.
-            schema: {type: string, example: '"1"'}
+            description: Strong updatedAt-based optimistic-lock ETag for subsequent updates.
+            schema: {type: string, example: '"2026-10-08T00:00:00.123Z"'}
         content:
           application/json:
             schema:
@@ -82,7 +82,7 @@
       - name: If-Match
         in: header
         required: true
-        schema: {type: string, example: '"1"'}
+        schema: {type: string, example: '"2026-10-08T00:00:00.123Z"'}
     requestBody:
       required: true
       content:

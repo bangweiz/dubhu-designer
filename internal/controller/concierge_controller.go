@@ -57,11 +57,11 @@ func (c *ConciergeController) UpdateConcierge(ctx *gin.Context) {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
 
-// GetConciergeVersion retrieves the working version or a saved snapshot.
+// GetConciergeVersion retrieves an immutable saved snapshot.
 func (c *ConciergeController) GetConciergeVersion(ctx *gin.Context) {
 	versionID := ctx.Param("conciergeVersionId")
 
@@ -115,7 +115,7 @@ func (c *ConciergeController) CreateConcierge(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
@@ -144,7 +144,7 @@ func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})

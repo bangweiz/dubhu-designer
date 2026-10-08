@@ -8,9 +8,9 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// ToInitialAgentEntity converts a CreateAgentDTO and concierge ObjectID into a new Agent entity with version 1.
+// ToInitialAgentEntity converts a CreateAgentDTO and concierge ObjectID into a new Agent entity with audit timestamps.
 func ToInitialAgentEntity(conciergeID bson.ObjectID, input dto.CreateAgentDTO) *models.Agent {
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Millisecond)
 	return &models.Agent{
 		ID:           bson.NewObjectID(),
 		ConciergeID:  conciergeID,
@@ -20,9 +20,7 @@ func ToInitialAgentEntity(conciergeID bson.ObjectID, input dto.CreateAgentDTO) *
 		Model:        models.Model(input.Model),
 		Instructions: []bson.ObjectID{},
 		Tools:        []bson.ObjectID{},
-		Version:      1,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		AuditFields:  models.AuditFields{CreatedAt: now, UpdatedAt: now},
 	}
 }
 
@@ -53,7 +51,7 @@ func ToAgentResponseDTO(a *models.Agent, instructions []models.Instruction, tool
 	}
 
 	return dto.AgentResponseDTO{
-		CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
+		CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt, CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
 		ConciergeID:  a.ConciergeID.Hex(),
 		Name:         a.Name,
 		Description:  a.Description,
@@ -61,14 +59,13 @@ func ToAgentResponseDTO(a *models.Agent, instructions []models.Instruction, tool
 		Model:        string(a.Model),
 		Instructions: instructionDTOs,
 		Tools:        toolDTOs,
-		Version:      a.Version,
 	}
 }
 
 // ToAgentSummaryResponseDTO converts a domain Agent model to AgentSummaryResponseDTO.
 func ToAgentSummaryResponseDTO(a *models.Agent) dto.AgentSummaryResponseDTO {
 	return dto.AgentSummaryResponseDTO{
-		CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
+		CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt, CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), ID: a.ID.Hex(),
 		ConciergeID: a.ConciergeID.Hex(),
 		Name:        a.Name,
 		Description: a.Description,
