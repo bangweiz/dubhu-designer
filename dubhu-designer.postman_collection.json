@@ -163,7 +163,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Staging variable\"\n}",
+							"raw": "{\n  \"name\": \"customer_name\",\n  \"description\": \"Staging variable\",\n  \"type\": \"string\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -237,7 +237,8 @@
 								}
 							}
 						},
-						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables/{{variableId}}"
+						"url": "{{baseUrl}}/organisations/{{organisationId}}/variables/{{variableId}}",
+						"description": "Updates variable name and description using If-Match. Type is immutable and must be omitted."
 					},
 					"response": []
 				}
@@ -675,7 +676,7 @@
 								"instructions"
 							]
 						},
-						"description": "Creates a new instruction. Referenced tools are extracted from {{tool:tool_id}} chips, checked for existence, and linked to the instruction. Saves the created instruction's ID to `instructionId` on success."
+						"description": "Creates a new instruction. Referenced tools are extracted from {{tool:tool_id}} chips, checked for existence, and linked to the instruction. Saves the created instruction's ID to `instructionId` on success. Content may reference variables using {{var:{{variableId}}}}; referenced IDs must exist in the current organisation."
 					},
 					"response": []
 				},
@@ -813,7 +814,7 @@
 								}
 							]
 						},
-						"description": "Updates an instruction using the ETag captured by Create/Get Instruction."
+						"description": "Updates an instruction using the ETag captured by Create/Get Instruction. Content may reference variables using {{var:{{variableId}}}}; referenced IDs must exist in the current organisation."
 					},
 					"response": []
 				}
@@ -1231,7 +1232,7 @@
 								}
 							]
 						},
-						"description": "Assigns an instruction to an agent within the specified concierge."
+						"description": "Assigns an instruction to an agent within the specified concierge. Content may reference variables using {{var:{{variableId}}}}; referenced IDs must exist in the current organisation."
 					},
 					"response": []
 				},

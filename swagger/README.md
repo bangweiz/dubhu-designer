@@ -34,7 +34,7 @@ A concierge stores its sole editable configuration, including `agents`, directly
 
 ### Migrating existing drafts
 
-Before deploying this change, back up the database and stop application writes. Run `mongosh "$MONGODB_URI" --file scripts/migrate-concierge-drafts.js` from the repository root, selecting the application database in the URI. A replica set is required. The script transfers each legacy draft's agents and version sequence into its parent concierge and removes its draft reference. Saved snapshot documents remain unchanged. It preserves the legacy draft collection for rollback and skips already migrated parents on reruns. Existing saved snapshots predate the name/description fields and may omit them.
+Existing legacy drafts require a data migration before deployment: transfer each draft's agents and version sequence into its parent concierge and remove its draft reference. Preserve saved snapshot documents. Existing saved snapshots predate the name/description fields and may omit them.
 
 The old version-scoped agent URLs are no longer registered. In Postman, set `conciergeVersionId` to an ID from a save response or `conciergeVersions`; it is only used for reading saved snapshots.
 
@@ -43,3 +43,15 @@ The old version-scoped agent URLs are no longer registered. In Postman, set `con
 Editable resources have no numeric revision field. Their strong `ETag` is the quoted UTC `updatedAt` timestamp, for example `"2026-10-08T00:00:00.123Z"`. Send the returned header unchanged as `If-Match` on updates. Old numeric ETags are invalid; fetch the resource again before updating. Invalid or stale timestamps return HTTP 412.
 
 Writes compare the persisted timestamp atomically and advance it by at least one millisecond, including embedded-agent mutations. Agent responses include `createdAt` and `updatedAt`. Saved concierge `version`, saved references, and `nextVersion` remain snapshot sequence numbers, not optimistic revision fields. Legacy numeric revision properties in existing documents are ignored; no database migration is required for timestamp concurrency.
+
+## Variable types and instruction references
+
+Variable creation requires `type`, one of `string`, `number`, or `bool`. Type is immutable: updates accept only `name` and `description`, and including `type` returns HTTP 400. Variable responses include this type. Legacy variables without a stored type are treated as `string`; metadata updates preserve that effective type.
+
+Instructions may contain `{{var:variableId}}` alongside `{{tool:toolId}}`. Create/update validates IDs and requires every referenced variable to belong to the authenticated organisation. Invalid, empty, missing, or inaccessible IDs return HTTP 400. Repeated IDs are stored once, in order of first appearance. Content remains unchanged; this API tracks references rather than substituting runtime values. The full instruction response contains a `variables` array of variable DTOs; removing tokens clears the references on update.
+
+Saving a concierge includes the referenced variable definitions in its immutable snapshot. Snapshot instructions contain variable ID arrays, and the snapshot's top-level `variables` array contains the matching definitions. Existing instructions containing variable tokens should be updated to populate their stored references. Older saved snapshots return empty variable arrays.
+
+## Local sample data
+
+Run `go run ./cmd/seed` to add a string property name, numeric nightly rate, boolean breakfast flag, and a concierge agent using an instruction that references all three. The command preserves existing records and credentials and reuses its named examples on subsequent runs. It uses the existing test organisation when available. If none exists, it creates a separate demo organisation and prints its root login details. The repeated property-name token demonstrates reference deduplication. `go run ./cmd/seed -reset` retains the destructive full-reset behaviour for the local database.

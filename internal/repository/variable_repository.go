@@ -76,3 +76,20 @@ func (r *VariableRepository) Update(ctx context.Context, id bson.ObjectID, expec
 	}
 	return &e, nil
 }
+
+// FindByIDs loads only variables belonging to the authenticated organisation.
+func (r *VariableRepository) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]models.Variable, error) {
+	result := []models.Variable{}
+	if len(ids) == 0 {
+		return result, nil
+	}
+	cursor, err := r.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return nil, fmt.Errorf("find variables by IDs: %w", err)
+	}
+	defer cursor.Close(ctx)
+	if err := cursor.All(ctx, &result); err != nil {
+		return nil, fmt.Errorf("decode referenced variables: %w", err)
+	}
+	return result, nil
+}

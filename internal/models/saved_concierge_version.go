@@ -6,6 +6,7 @@ import (
 
 // SavedConciergeVersion is an immutable, self-contained customer-facing concierge snapshot.
 type SavedConciergeVersion struct {
+	Variables      []Variable `bson:"variables" json:"variables"`
 	AuditFields    `bson:",inline"`
 	OrganisationID bson.ObjectID `bson:"organisation_id" json:"-"`
 	ID             bson.ObjectID `bson:"_id,omitempty" json:"id"`

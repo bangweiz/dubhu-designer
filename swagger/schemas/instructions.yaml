@@ -12,7 +12,7 @@ CreateInstructionRequest:
     content:
       type: string
       maxLength: 100000
-      description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+      description: Instruction content describing LLM behavior, referencing tools using {{tool:toolId}} and variables using {{var:variableId}} syntax
       example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
 
 UpdateInstructionRequest:
@@ -29,7 +29,7 @@ UpdateInstructionRequest:
     content:
       type: string
       maxLength: 100000
-      description: Instruction content describing LLM behavior, referencing tools using {{tool:tool_id}} syntax
+      description: Instruction content describing LLM behavior, referencing tools using {{tool:toolId}} and variables using {{var:variableId}} syntax
       example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and format output as markdown."
 
 InstructionUsage:
@@ -38,7 +38,6 @@ InstructionUsage:
   properties:
     conciergeId: {type: string}
     conciergeName: {type: string}
-    version: {type: integer, minimum: 1, description: Customer-facing version number, not an optimistic-lock version}
     agentId: {type: string}
     agentName: {type: string}
 
@@ -79,6 +78,7 @@ Instruction:
     - name
     - content
     - tools
+    - variables
     - createdAt
     - updatedAt
   properties:
@@ -92,6 +92,11 @@ Instruction:
     content:
       type: string
       example: "Search the web using {{tool:651da3b57f8641a27e36c579}} and synthesize the findings."
+    variables:
+      type: array
+      description: Referenced variables in order of first appearance, deduplicated by ID
+      items:
+        $ref: './variables.yaml#/Variable'
     tools:
       type: array
       description: List of resolved tools referenced by this instruction

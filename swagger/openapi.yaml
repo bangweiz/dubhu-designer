@@ -118,8 +118,10 @@ components:
       $ref: './schemas/agents.yaml#/Agent'
     AgentSummary:
       $ref: './schemas/agents.yaml#/AgentSummary'
-    VariableRequest:
-      $ref: './schemas/variables.yaml#/VariableRequest'
+    CreateVariableRequest:
+      $ref: './schemas/variables.yaml#/CreateVariableRequest'
+    UpdateVariableRequest:
+      $ref: './schemas/variables.yaml#/UpdateVariableRequest'
     Variable:
       $ref: './schemas/variables.yaml#/Variable'
     EnvironmentRequest:

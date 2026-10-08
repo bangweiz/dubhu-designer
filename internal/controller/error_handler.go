@@ -23,6 +23,7 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 	}
 
 	var referencedToolsErr *service.ErrReferencedToolsNotFound
+	var referencedVariablesErr *service.ErrReferencedVariablesNotFound
 	var validationErr validator.ValidationErrors
 	switch {
 	case errors.Is(err, service.ErrUnauthenticated):
@@ -74,6 +75,8 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 		writeNameConflict(ctx, "instruction name already exists", meta.nameValue)
 	case errors.Is(err, service.ErrToolNameExists):
 		writeNameConflict(ctx, "tool name already exists", meta.nameValue)
+	case errors.As(err, &referencedVariablesErr):
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": referencedVariablesErr.Error()})
 	case errors.As(err, &referencedToolsErr):
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": referencedToolsErr.Error()})
 	default:

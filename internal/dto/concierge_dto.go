@@ -37,6 +37,7 @@ type ConciergeSummaryResponseDTO = ConciergeResponseDTO
 
 // SavedConciergeVersionResponseDTO is the public immutable snapshot representation.
 type SavedConciergeVersionResponseDTO struct {
+	Variables    []VariableResponseDTO         `json:"variables"`
 	ID           string                        `json:"id"`
 	ConciergeID  string                        `json:"conciergeId"`
 	Name         string                        `json:"name"`
@@ -69,6 +70,7 @@ type SavedAgentResponseDTO struct {
 
 // SavedInstructionResponseDTO retains tool references within the snapshot.
 type SavedInstructionResponseDTO struct {
+	Variables []string  `json:"variables"`
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Content   string    `json:"content"`

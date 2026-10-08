@@ -66,8 +66,8 @@ func main() {
 	variableService := service.NewVariableService(variableRepo)
 	environmentService := service.NewEnvironmentService(environmentRepo)
 	toolService := service.NewToolService(toolRepo)
-	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
-	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, savedConciergeRepo)
+	instructionService := service.NewInstructionService(instructionRepo, toolRepo, variableRepo)
+	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, variableRepo, savedConciergeRepo)
 	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo, toolRepo)
 
 	// Dependency Injection: Controllers

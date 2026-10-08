@@ -36,12 +36,17 @@ func ToSavedConciergeVersionResponseDTO(saved *models.SavedConciergeVersion) dto
 	for _, instruction := range saved.Instructions {
 		instructions = append(instructions, dto.SavedInstructionResponseDTO{
 			ID: instruction.ID.Hex(), Name: instruction.Name, Content: instruction.Content,
-			Tools: objectIDStrings(instruction.Tools), CreatedBy: auditID(instruction.CreatedBy),
+			Variables: objectIDStrings(instruction.Variables), Tools: objectIDStrings(instruction.Tools), CreatedBy: auditID(instruction.CreatedBy),
 			UpdatedBy: auditID(instruction.UpdatedBy), CreatedAt: instruction.CreatedAt, UpdatedAt: instruction.UpdatedAt,
 		})
 	}
+	variables := make([]dto.VariableResponseDTO, 0, len(saved.Variables))
+	for _, variable := range saved.Variables {
+		variables = append(variables, ToVariableResponseDTO(&variable))
+	}
 	return dto.SavedConciergeVersionResponseDTO{
-		ID: saved.ID.Hex(), ConciergeID: saved.ConciergeID.Hex(), Name: saved.Name, Description: saved.Description,
+		Variables: variables,
+		ID:        saved.ID.Hex(), ConciergeID: saved.ConciergeID.Hex(), Name: saved.Name, Description: saved.Description,
 		Version: saved.Version, Agents: agents, Instructions: instructions, Tools: ToToolResponseDTOList(saved.Tools),
 		CreatedBy: auditID(saved.CreatedBy), UpdatedBy: auditID(saved.UpdatedBy), CreatedAt: saved.CreatedAt, UpdatedAt: saved.UpdatedAt,
 	}

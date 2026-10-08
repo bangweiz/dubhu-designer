@@ -1,14 +1,26 @@
-VariableRequest:
+CreateVariableRequest:
+  type: object
+  required: [name, description, type]
+  properties:
+    type: {type: string, enum: [string, number, bool], example: string}
+    name: {type: string, minLength: 1, maxLength: 200, example: customer_name}
+    description: {type: string, minLength: 1, maxLength: 2000, example: Customer name variable}
+
+UpdateVariableRequest:
   type: object
   required: [name, description]
+  description: Type is immutable and must not be included in update requests.
+  not:
+    required: [type]
   properties:
     name: {type: string, minLength: 1, maxLength: 200, example: customer_name}
     description: {type: string, minLength: 1, maxLength: 2000, example: Customer name variable}
 
 Variable:
   type: object
-  required: [id, name, description, createdAt, updatedAt]
+  required: [id, name, description, type, createdAt, updatedAt]
   properties:
+    type: {type: string, enum: [string, number, bool], example: string}
     id: {type: string}
     name: {type: string}
     description: {type: string}
