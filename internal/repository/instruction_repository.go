@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -12,23 +13,19 @@ import (
 
 const collectionInstructions = "instructions"
 
-// ListUsages reads current instruction references from drafts, excluding immutable snapshots.
+// ListUsages reads current instruction references from editable concierges, excluding immutable snapshots.
 func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID) ([]InstructionUsageResult, error) {
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: bson.M{"agents.instructions": id}}},
 		bson.D{{Key: "$unwind", Value: "$agents"}},
 		bson.D{{Key: "$match", Value: bson.M{"agents.instructions": id}}},
 		bson.D{{Key: "$project", Value: bson.M{
-			"_id": 0, "concierge_id": 1, "concierge_version_id": "$_id", "version": 1,
+			"_id": 0, "concierge_id": "$_id", "concierge_name": "$name",
 			"agent_id": "$agents._id", "agent_name": "$agents.name",
 		}}},
-		bson.D{{Key: "$lookup", Value: bson.M{"from": collectionConcierges, "localField": "concierge_id", "foreignField": "_id", "as": "concierge"}}},
-		bson.D{{Key: "$unwind", Value: "$concierge"}},
-		bson.D{{Key: "$set", Value: bson.M{"concierge_name": "$concierge.name"}}},
-		bson.D{{Key: "$unset", Value: "concierge"}},
-		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "version", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
 	}
-	cursor, err := r.collection.sibling(collectionDraftConciergeVersions).Aggregate(ctx, pipeline)
+	cursor, err := r.collection.sibling(collectionConcierges).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate instruction usages: %w", err)
 	}
@@ -164,16 +161,15 @@ func (r *InstructionRepository) FindByIDs(ctx context.Context, ids []bson.Object
 }
 
 // Update updates an existing Instruction document using optimistic concurrency control.
-// Matches by _id and version. On success, increments version and returns the updated document.
-func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, expectedVersion int, updateDoc bson.M) (*models.Instruction, error) {
+// Matches by _id and updated_at. On success, advances updated_at and returns the updated document.
+func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, updateDoc bson.M) (*models.Instruction, error) {
 	filter := bson.M{
-		"_id":     id,
-		"version": expectedVersion,
+		"_id":        id,
+		"updated_at": expectedUpdatedAt,
 	}
 
 	update := bson.M{
 		"$set": updateDoc,
-		"$inc": bson.M{"version": 1},
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)

@@ -549,7 +549,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -558,8 +558,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"tools",
@@ -577,11 +575,6 @@
 								{
 									"key": "toolId",
 									"value": "{{toolId}}"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -595,7 +588,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId/tools/:toolId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -604,8 +597,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"tools",
@@ -623,11 +614,6 @@
 								{
 									"key": "toolId",
 									"value": "{{toolId}}"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -850,7 +836,6 @@
 									"        pm.collectionVariables.set(\"conciergeId\", jsonData.data.id);",
 									"        console.log(\"Saved conciergeId:\", jsonData.data.id);",
 									"    }",
-									"    if (jsonData.data && jsonData.data.conciergeVersions) { pm.collectionVariables.set(\"conciergeVersionId\", jsonData.data.conciergeVersions[0].conciergeVersionId); }",
 									"}"
 								],
 								"type": "text/javascript"
@@ -933,7 +918,7 @@
 								}
 							]
 						},
-						"description": "Retrieves concierge identity and discoverable working/saved version IDs."
+						"description": "Retrieves the editable concierge, its agents, next snapshot number, and saved version references."
 					},
 					"response": []
 				},
@@ -990,10 +975,11 @@
 								{
 									"key": "conciergeVersionId",
 									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
+									"description": "Saved version ID returned in Concierge.conciergeVersions"
 								}
 							]
-						}
+						},
+						"description": "Retrieves an immutable saved snapshot by ID."
 					},
 					"response": []
 				}
@@ -1041,7 +1027,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1050,8 +1036,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents"
 							],
 							"variable": [
@@ -1059,11 +1043,6 @@
 									"key": "conciergeId",
 									"value": "{{conciergeId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1077,7 +1056,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1086,8 +1065,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents"
 							],
 							"variable": [
@@ -1095,11 +1072,6 @@
 									"key": "conciergeId",
 									"value": "{{conciergeId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the parent concierge"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1126,7 +1098,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1135,8 +1107,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId"
 							],
@@ -1150,11 +1120,6 @@
 									"key": "agentId",
 									"value": "{{agentId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the agent"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1199,7 +1164,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1208,8 +1173,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId"
 							],
@@ -1223,11 +1186,6 @@
 									"key": "agentId",
 									"value": "{{agentId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the agent"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1241,7 +1199,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1250,8 +1208,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"instructions",
@@ -1272,11 +1228,6 @@
 									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1290,7 +1241,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId",
+							"raw": "{{baseUrl}}/organisations/{{organisationId}}/concierges/:conciergeId/agents/:agentId/instructions/:instructionId",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1299,8 +1250,6 @@
 								"{{organisationId}}",
 								"concierges",
 								":conciergeId",
-								"concierge-versions",
-								":conciergeVersionId",
 								"agents",
 								":agentId",
 								"instructions",
@@ -1321,11 +1270,6 @@
 									"key": "instructionId",
 									"value": "{{instructionId}}",
 									"description": "Hexadecimal MongoDB ObjectID of the instruction"
-								},
-								{
-									"key": "conciergeVersionId",
-									"value": "{{conciergeVersionId}}",
-									"description": "draft or a version ID returned in Concierge.conciergeVersions"
 								}
 							]
 						},
@@ -1434,7 +1378,7 @@
 		},
 		{
 			"key": "conciergeVersionId",
-			"value": "draft",
+			"value": "",
 			"type": "string"
 		}
 	],

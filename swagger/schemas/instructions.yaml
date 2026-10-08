@@ -34,11 +34,10 @@ UpdateInstructionRequest:
 
 InstructionUsage:
   type: object
-  required: [conciergeId, conciergeName, conciergeVersionId, version, agentId, agentName]
+  required: [conciergeId, conciergeName, agentId, agentName]
   properties:
     conciergeId: {type: string}
     conciergeName: {type: string}
-    conciergeVersionId: {type: string}
     version: {type: integer, minimum: 1, description: Customer-facing version number, not an optimistic-lock version}
     agentId: {type: string}
     agentName: {type: string}

@@ -50,14 +50,14 @@ paths:
     $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierge~1{conciergeId}:save'
   /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
     $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}'
-  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
-    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents'
-  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
-    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}'
-  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
-    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1instructions~1{instructionId}'
-  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
-    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}~1agents~1{agentId}~1tools~1{toolId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/agents:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1agents'
+  /organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1agents~1{agentId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}/instructions/{instructionId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1agents~1{agentId}~1instructions~1{instructionId}'
+  /organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}/tools/{toolId}:
+    $ref: './paths/agents.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1agents~1{agentId}~1tools~1{toolId}'
   /organisations/{organisationId}/variables:
     $ref: './paths/variables.yaml#/~1organisations~1{organisationId}~1variables'
   /organisations/{organisationId}/variables/{variableId}:

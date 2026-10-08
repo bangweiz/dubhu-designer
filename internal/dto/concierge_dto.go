@@ -22,14 +22,59 @@ type ConciergeVersionDescriptorDTO struct {
 	Version            int    `json:"version"`
 }
 type ConciergeResponseDTO struct {
+	Agents            []AgentSummaryResponseDTO       `json:"agents"`
+	NextVersion       int                             `json:"nextVersion"`
 	ID                string                          `json:"id"`
 	Name              string                          `json:"name"`
 	Description       string                          `json:"description"`
 	ConciergeVersions []ConciergeVersionDescriptorDTO `json:"conciergeVersions"`
-	Version           int                             `json:"-"`
 	CreatedBy         string                          `json:"createdBy"`
 	UpdatedBy         string                          `json:"updatedBy"`
 	CreatedAt         time.Time                       `json:"createdAt"`
 	UpdatedAt         time.Time                       `json:"updatedAt"`
 }
 type ConciergeSummaryResponseDTO = ConciergeResponseDTO
+
+// SavedConciergeVersionResponseDTO is the public immutable snapshot representation.
+type SavedConciergeVersionResponseDTO struct {
+	ID           string                        `json:"id"`
+	ConciergeID  string                        `json:"conciergeId"`
+	Name         string                        `json:"name"`
+	Description  string                        `json:"description"`
+	Version      int                           `json:"version"`
+	Agents       []SavedAgentResponseDTO       `json:"agents"`
+	Instructions []SavedInstructionResponseDTO `json:"instructions"`
+	Tools        []ToolResponseDTO             `json:"tools"`
+	CreatedBy    string                        `json:"createdBy"`
+	UpdatedBy    string                        `json:"updatedBy"`
+	CreatedAt    time.Time                     `json:"createdAt"`
+	UpdatedAt    time.Time                     `json:"updatedAt"`
+}
+
+// SavedAgentResponseDTO retains references to documents contained in the snapshot.
+type SavedAgentResponseDTO struct {
+	ID           string    `json:"id"`
+	ConciergeID  string    `json:"conciergeId,omitempty"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	Goal         string    `json:"goal"`
+	Model        string    `json:"model"`
+	Instructions []string  `json:"instructions"`
+	Tools        []string  `json:"tools"`
+	CreatedBy    string    `json:"createdBy"`
+	UpdatedBy    string    `json:"updatedBy"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+// SavedInstructionResponseDTO retains tool references within the snapshot.
+type SavedInstructionResponseDTO struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Content   string    `json:"content"`
+	Tools     []string  `json:"tools"`
+	CreatedBy string    `json:"createdBy"`
+	UpdatedBy string    `json:"updatedBy"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}

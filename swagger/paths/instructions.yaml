@@ -23,7 +23,7 @@
         description: Instruction created successfully
         headers:
           ETag:
-            description: Strong ETag for the created instruction representation
+            description: Strong ETag derived from updatedAt for the created instruction representation
             schema:
               type: string
         content:
@@ -99,7 +99,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   get:
     summary: List instruction usages
-    description: Returns one entry per referencing agent in draft concierge versions. Saved snapshots are excluded because their instructions are independent of the current instruction. An unused instruction returns an empty array.
+    description: Returns one entry per referencing agent in editable concierges. Saved snapshots are excluded because their instructions are independent of the current instruction. An unused instruction returns an empty array.
     operationId: listInstructionUsages
     tags: [Instructions]
     parameters:
@@ -111,7 +111,7 @@
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
       '200':
-        description: Instruction usages ordered by concierge name, version, and agent name.
+        description: Instruction usages ordered by concierge name and agent name.
         content:
           application/json:
             schema:
@@ -148,7 +148,7 @@
         description: Instruction retrieved successfully
         headers:
           ETag:
-            description: Strong ETag for the current instruction representation
+            description: Strong ETag derived from updatedAt for the current instruction representation
             schema:
               type: string
         content:
@@ -214,7 +214,7 @@
         description: Instruction updated successfully
         headers:
           ETag:
-            description: Strong ETag for the updated instruction representation
+            description: Strong ETag derived from updatedAt for the updated instruction representation
             schema:
               type: string
         content:

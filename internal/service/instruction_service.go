@@ -160,7 +160,7 @@ func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string
 		return nil, ErrInstructionNotFound
 	}
 
-	expectedVersion, err := etag.Parse(ifMatch)
+	expectedUpdatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrInstructionETagMismatch
 	}
@@ -177,7 +177,7 @@ func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string
 		"updated_at": time.Now().UTC(),
 	}
 
-	updated, err := s.instructionRepo.Update(ctx, objectID, expectedVersion, updateDoc)
+	updated, err := s.instructionRepo.Update(ctx, objectID, expectedUpdatedAt, updateDoc)
 	if err != nil {
 		if errors.Is(err, repository.ErrInstructionConflict) {
 			existing, getErr := s.instructionRepo.GetByID(ctx, objectID)

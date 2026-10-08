@@ -1,4 +1,4 @@
-/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents:
+/organisations/{organisationId}/concierges/{conciergeId}/agents:
   parameters:
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
@@ -8,13 +8,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -40,7 +33,7 @@
         description: Agent created successfully
         headers:
           ETag:
-            description: Strong ETag for the created agent representation
+            description: Strong ETag derived from updatedAt for the created agent representation
             schema:
               type: string
         content:
@@ -101,13 +94,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -150,7 +136,7 @@
                   type: string
                   example: "failed to query agents"
 
-/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}:
+/organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}:
   parameters:
     - $ref: '../parameters.yaml#/OrganisationID'
   get:
@@ -160,13 +146,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -188,7 +167,7 @@
         description: Agent retrieved successfully
         headers:
           ETag:
-            description: Strong ETag for the current agent representation
+            description: Strong ETag derived from updatedAt for the current agent representation
             schema:
               type: string
         content:
@@ -225,13 +204,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -252,7 +224,7 @@
         description: Strong ETag from the latest agent representation
         schema:
           type: string
-          example: '"1"'
+          example: '"2026-10-08T00:00:00.123Z"'
     requestBody:
       required: true
       content:
@@ -271,7 +243,7 @@
         description: Agent updated successfully
         headers:
           ETag:
-            description: Strong ETag for the updated agent representation
+            description: Strong ETag derived from updatedAt for the updated agent representation
             schema:
               type: string
         content:
@@ -338,7 +310,7 @@
                   type: string
                   example: "failed to update agent"
 
-/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/instructions/{instructionId}:
+/organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}/instructions/{instructionId}:
   parameters:
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
@@ -348,13 +320,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -379,12 +344,6 @@
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
-      '409':
-        description: Saved concierge versions are immutable
-        content:
-          application/json:
-            schema:
-              $ref: '../schemas/common.yaml#/ErrorResponse'
       '204':
         description: Instruction assigned successfully
       '404':
@@ -414,13 +373,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -445,12 +397,6 @@
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
-      '409':
-        description: Saved concierge versions are immutable
-        content:
-          application/json:
-            schema:
-              $ref: '../schemas/common.yaml#/ErrorResponse'
       '204':
         description: Instruction unassigned successfully
       '404':
@@ -474,7 +420,7 @@
                   type: string
                   example: "failed to unassign instruction from agent"
 
-/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}/agents/{agentId}/tools/{toolId}:
+/organisations/{organisationId}/concierges/{conciergeId}/agents/{agentId}/tools/{toolId}:
   parameters:
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
@@ -484,13 +430,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -512,12 +451,6 @@
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
-      '409':
-        description: Saved concierge versions are immutable
-        content:
-          application/json:
-            schema:
-              $ref: '../schemas/common.yaml#/ErrorResponse'
       '204':
         description: Tool assigned successfully
       '404':
@@ -539,13 +472,6 @@
     tags:
       - Agents
     parameters:
-      - name: conciergeVersionId
-        in: path
-        required: true
-        description: Use draft or an ID returned in Concierge.conciergeVersions. Changes are allowed for the working version.
-        schema:
-          type: string
-          example: draft
       - name: conciergeId
         in: path
         required: true
@@ -567,12 +493,6 @@
     responses:
       '401': {$ref: '../responses.yaml#/Unauthenticated'}
       '403': {$ref: '../responses.yaml#/Forbidden'}
-      '409':
-        description: Saved concierge versions are immutable
-        content:
-          application/json:
-            schema:
-              $ref: '../schemas/common.yaml#/ErrorResponse'
       '204':
         description: Tool unassigned successfully
       '404':

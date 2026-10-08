@@ -71,7 +71,7 @@ func (c *ToolController) CreateTool(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(toolResponse.Version))
+	ctx.Header("ETag", etag.Format(toolResponse.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": toolResponse,
 	})
@@ -100,7 +100,7 @@ func (c *ToolController) GetToolByID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(toolResponse.Version))
+	ctx.Header("ETag", etag.Format(toolResponse.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": toolResponse,
 	})
@@ -140,7 +140,7 @@ func (c *ToolController) UpdateTool(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(toolResponse.Version))
+	ctx.Header("ETag", etag.Format(toolResponse.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": toolResponse,
 	})

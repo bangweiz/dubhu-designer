@@ -71,7 +71,7 @@ func (c *InstructionController) CreateInstruction(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
@@ -100,7 +100,7 @@ func (c *InstructionController) GetInstructionByID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
@@ -140,7 +140,7 @@ func (c *InstructionController) UpdateInstruction(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})

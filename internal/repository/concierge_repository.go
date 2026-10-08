@@ -13,33 +13,28 @@ import (
 
 const collectionConcierges = "concierges"
 
-// RecordSavedVersion replaces the old draft reference with its snapshot and appends the advanced draft.
-// The caller must run this alongside snapshot creation and draft advancement in one transaction.
-func (r *ConciergeRepository) RecordSavedVersion(ctx context.Context, id, draftID, savedID bson.ObjectID, version int) error {
-	refs := "$concierge_versions"
-	replacement := bson.M{"concierge_version_id": savedID, "version": version}
-	draft := models.ConciergeVersionReference{ConciergeVersionID: draftID, Version: version + 1}
-	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": id, "concierge_versions": bson.M{"$elemMatch": bson.M{"concierge_version_id": draftID, "version": version}}}, mongo.Pipeline{bson.D{{Key: "$set", Value: bson.M{
-		"concierge_versions": bson.M{"$concatArrays": bson.A{
-			bson.M{"$map": bson.M{"input": refs, "as": "ref", "in": bson.M{"$cond": bson.A{bson.M{"$eq": bson.A{"$$ref.concierge_version_id", draftID}}, replacement, "$$ref"}}}},
-			bson.A{draft},
-		}},
-		"version": bson.M{"$add": bson.A{"$version", 1}}, "updated_at": time.Now().UTC(),
-	}}}})
+// RecordSavedVersion appends a snapshot and advances its sequence atomically.
+// Snapshot insertion and this update must run in the same transaction.
+func (r *ConciergeRepository) RecordSavedVersion(ctx context.Context, id, savedID bson.ObjectID, nextVersion int, expectedUpdatedAt time.Time) error {
+	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": id, "next_version": nextVersion, "updated_at": expectedUpdatedAt}, bson.M{
+		"$push": bson.M{"concierge_versions": models.ConciergeVersionReference{ConciergeVersionID: savedID, Version: nextVersion}},
+		"$inc":  bson.M{"next_version": 1},
+		"$set":  bson.M{"updated_at": time.Now().UTC()},
+	})
 	if err != nil {
 		return fmt.Errorf("record saved concierge version: %w", err)
 	}
 	if result.MatchedCount == 0 {
-		return ErrVersionConflict
+		return ErrUpdateConflict
 	}
 	return nil
 }
 
-func (r *ConciergeRepository) Update(ctx context.Context, id bson.ObjectID, version int, name, description string) (*models.Concierge, error) {
+func (r *ConciergeRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, name, description string) (*models.Concierge, error) {
 	var c models.Concierge
-	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id, "version": version}, bson.M{"$set": bson.M{"name": name, "description": description, "updated_at": time.Now().UTC()}, "$inc": bson.M{"version": 1}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&c)
+	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": id, "updated_at": expectedUpdatedAt}, bson.M{"$set": bson.M{"name": name, "description": description, "updated_at": time.Now().UTC()}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&c)
 	if err == mongo.ErrNoDocuments {
-		return nil, ErrVersionConflict
+		return nil, ErrUpdateConflict
 	}
 	if mongo.IsDuplicateKeyError(err) {
 		return nil, ErrConciergeNameExists
@@ -66,6 +61,8 @@ func NewConciergeRepository(database *mongo.Database) *ConciergeRepository {
 // 1. Unique index on (organisation_id, name).
 func (r *ConciergeRepository) InitIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "agents.instructions", Value: 1}}},
+		{Keys: bson.D{{Key: "agents.tools", Value: 1}}},
 		{
 			Keys:    bson.D{{Key: "organisation_id", Value: 1}, {Key: "name", Value: 1}},
 			Options: options.Index().SetUnique(true),

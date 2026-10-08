@@ -65,6 +65,8 @@ Agent:
   required:
     - id
     - conciergeId
+    - createdAt
+    - updatedAt
     - name
     - description
     - goal
@@ -72,6 +74,8 @@ Agent:
     - instructions
     - tools
   properties:
+    createdAt: {type: string, format: date-time}
+    updatedAt: {type: string, format: date-time}
     createdBy: {type: string, readOnly: true, description: Creating account ID}
     updatedBy: {type: string, readOnly: true, description: Last modifying account ID}
     id:
@@ -113,11 +117,15 @@ AgentSummary:
   required:
     - id
     - conciergeId
+    - createdAt
+    - updatedAt
     - name
     - description
     - goal
     - model
   properties:
+    createdAt: {type: string, format: date-time}
+    updatedAt: {type: string, format: date-time}
     createdBy: {type: string, readOnly: true, description: Creating account ID}
     updatedBy: {type: string, readOnly: true, description: Last modifying account ID}
     id:

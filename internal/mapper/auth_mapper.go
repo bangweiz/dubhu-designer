@@ -6,7 +6,7 @@ import (
 )
 
 func ToAccountResponseDTO(a *models.Account) dto.AccountResponseDTO {
-	return dto.AccountResponseDTO{ID: a.ID.Hex(), OrganisationID: a.OrganisationID.Hex(), Name: a.Name, Email: a.Email, Role: a.Role, CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt}
+	return dto.AccountResponseDTO{ID: a.ID.Hex(), OrganisationID: a.OrganisationID.Hex(), Name: a.Name, Email: a.Email, Role: string(a.Role), CreatedBy: auditID(a.CreatedBy), UpdatedBy: auditID(a.UpdatedBy), CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt}
 }
 
 func ToOrganisationResponseDTO(o *models.Organisation) dto.OrganisationResponseDTO {

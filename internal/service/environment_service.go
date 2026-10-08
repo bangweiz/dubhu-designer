@@ -64,12 +64,12 @@ func (s *EnvironmentService) UpdateEnvironment(ctx context.Context, idStr, ifMat
 	if err != nil {
 		return nil, ErrEnvironmentNotFound
 	}
-	version, err := etag.Parse(ifMatch)
+	updatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrEnvironmentETagMismatch
 	}
-	e, err := s.environmentRepo.Update(ctx, id, version, input.Name, input.Description)
-	if errors.Is(err, repository.ErrVersionConflict) {
+	e, err := s.environmentRepo.Update(ctx, id, updatedAt, input.Name, input.Description)
+	if errors.Is(err, repository.ErrUpdateConflict) {
 		existing, lookupErr := s.environmentRepo.GetByID(ctx, id)
 		if lookupErr != nil {
 			return nil, lookupErr

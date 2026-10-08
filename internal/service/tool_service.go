@@ -51,7 +51,7 @@ func NewToolService(toolRepo *repository.ToolRepository) *ToolService {
 	}
 }
 
-// CreateTool maps DTO to a new Tool entity (version 1), persists it through repository,
+// CreateTool maps DTO to a new Tool entity (with audit timestamps), persists it through repository,
 // and returns the mapped ToolResponseDTO.
 func (s *ToolService) CreateTool(ctx context.Context, input dto.CreateToolDTO) (*dto.ToolResponseDTO, error) {
 	tool := mapper.ToInitialToolEntity(input)
@@ -98,14 +98,14 @@ func (s *ToolService) ListTools(ctx context.Context) ([]dto.ToolResponseDTO, err
 }
 
 // UpdateTool updates an existing tool with optimistic concurrency control.
-// Matches by ID and version, increments version, and updates updated_at timestamp.
+// Matches by ID and updated_at, then advances the timestamp.
 func (s *ToolService) UpdateTool(ctx context.Context, idStr string, ifMatch string, input dto.UpdateToolDTO) (*dto.ToolResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrToolNotFound
 	}
 
-	expectedVersion, err := etag.Parse(ifMatch)
+	expectedUpdatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrToolETagMismatch
 	}
@@ -118,9 +118,9 @@ func (s *ToolService) UpdateTool(ctx context.Context, idStr string, ifMatch stri
 		"updated_at":  time.Now().UTC(),
 	}
 
-	updatedTool, err := s.toolRepo.Update(ctx, objectID, expectedVersion, updateDoc)
+	updatedTool, err := s.toolRepo.Update(ctx, objectID, expectedUpdatedAt, updateDoc)
 	if err != nil {
-		if errors.Is(err, repository.ErrVersionConflict) {
+		if errors.Is(err, repository.ErrUpdateConflict) {
 			// Check existence only after a failed conditional update to distinguish 404 from 412.
 			existing, getErr := s.toolRepo.GetByID(ctx, objectID)
 			if getErr == nil && existing == nil {

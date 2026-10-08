@@ -58,11 +58,6 @@ func main() {
 		panic(fmt.Sprintf("Failed to initialize saved concierge indexes: %v", err))
 	}
 
-	conciergeVersionRepo := repository.NewDraftConciergeVersionRepository(database)
-	if err := conciergeVersionRepo.InitIndexes(ctx); err != nil {
-		panic(err)
-	}
-
 	// Dependency Injection: Services
 	authService, err := service.NewAuthService(authRepo)
 	if err != nil {
@@ -72,8 +67,8 @@ func main() {
 	environmentService := service.NewEnvironmentService(environmentRepo)
 	toolService := service.NewToolService(toolRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo)
-	conciergeService := service.NewConciergeService(conciergeRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
-	agentService := service.NewAgentService(agentRepo, conciergeVersionRepo, instructionRepo, toolRepo, savedConciergeRepo)
+	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, savedConciergeRepo)
+	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo, toolRepo)
 
 	// Dependency Injection: Controllers
 	authController := controller.NewAuthController(authService)

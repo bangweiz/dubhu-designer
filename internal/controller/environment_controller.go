@@ -40,7 +40,7 @@ func (c *EnvironmentController) CreateEnvironment(ctx *gin.Context) {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{"data": resp})
 }
 
@@ -59,7 +59,7 @@ func (c *EnvironmentController) GetEnvironmentByID(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
 
@@ -84,6 +84,6 @@ func (c *EnvironmentController) UpdateEnvironment(ctx *gin.Context) {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }

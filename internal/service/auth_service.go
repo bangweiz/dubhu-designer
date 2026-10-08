@@ -47,8 +47,8 @@ func (s *AuthService) CreateOrganisation(ctx context.Context, input dto.CreateOr
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	orgID, rootID := bson.NewObjectID(), bson.NewObjectID()
-	org := &models.Organisation{ID: orgID, Name: input.Name, Description: input.Description, RootAccountID: rootID, CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}
-	root := &models.Account{ID: rootID, OrganisationID: orgID, Name: input.RootAccount.Name, Email: input.RootAccount.Email, PasswordHash: string(password), Role: models.RoleRoot, CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}
+	org := &models.Organisation{ID: orgID, Name: input.Name, Description: input.Description, RootAccountID: rootID, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}}
+	root := &models.Account{ID: rootID, OrganisationID: orgID, Name: input.RootAccount.Name, Email: input.RootAccount.Email, PasswordHash: string(password), Role: models.RoleRoot, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}}
 	return util.RunInTransaction(ctx, s.repo.Client(), func(tx context.Context) (*dto.CreateOrganisationResponseDTO, error) {
 		if err := s.repo.CreateOrganisation(tx, org); err != nil {
 			if errors.Is(err, repository.ErrOrganisationNameExists) {
@@ -79,7 +79,7 @@ func (s *AuthService) CreateAccount(ctx context.Context, input dto.CreateAccount
 		return nil, err
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
-	account := &models.Account{ID: bson.NewObjectID(), OrganisationID: principal.OrganisationID, Name: input.Name, Email: input.Email, PasswordHash: string(password), Role: input.Role, CreatedBy: principal.AccountID, UpdatedBy: principal.AccountID, CreatedAt: now, UpdatedAt: now}
+	account := &models.Account{ID: bson.NewObjectID(), OrganisationID: principal.OrganisationID, Name: input.Name, Email: input.Email, PasswordHash: string(password), Role: input.Role, AuditFields: models.AuditFields{CreatedBy: principal.AccountID, UpdatedBy: principal.AccountID, CreatedAt: now, UpdatedAt: now}}
 	if err := s.repo.CreateAccount(ctx, account); err != nil {
 		if errors.Is(err, repository.ErrAccountConflict) {
 			return nil, ErrAccountEmailExists

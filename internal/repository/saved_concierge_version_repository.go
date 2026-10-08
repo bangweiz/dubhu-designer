@@ -59,29 +59,3 @@ func (r *SavedConciergeVersionRepository) Create(ctx context.Context, saved *mod
 	}
 	return nil
 }
-
-// GetByConciergeIDAndVersion retrieves an immutable snapshot by its public composite identity.
-func (r *SavedConciergeVersionRepository) GetByConciergeIDAndVersion(ctx context.Context, conciergeID bson.ObjectID, version int) (*models.SavedConciergeVersion, error) {
-	var saved models.SavedConciergeVersion
-	err := r.collection.FindOne(ctx, bson.M{"concierge_id": conciergeID, "version": version}).Decode(&saved)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to find saved concierge: %w", err)
-	}
-	return &saved, nil
-}
-
-func (r *SavedConciergeVersionRepository) ListByConciergeID(ctx context.Context, id bson.ObjectID) ([]models.SavedConciergeVersion, error) {
-	cursor, err := r.collection.Find(ctx, bson.M{"concierge_id": id}, options.Find().SetProjection(bson.M{"_id": 1, "version": 1}).SetSort(bson.D{{Key: "version", Value: 1}}))
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-	versions := []models.SavedConciergeVersion{}
-	if err := cursor.All(ctx, &versions); err != nil {
-		return nil, err
-	}
-	return versions, nil
-}

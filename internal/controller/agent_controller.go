@@ -22,9 +22,9 @@ func NewAgentController(agentService *service.AgentService) *AgentController {
 	}
 }
 
-// RegisterRoutes registers the agent endpoints onto the gin router/group under /concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents.
+// RegisterRoutes registers the agent endpoints onto the gin router/group under /concierges/:conciergeId/agents.
 func (c *AgentController) RegisterRoutes(rg *gin.RouterGroup) {
-	agents := rg.Group("/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents")
+	agents := rg.Group("/concierges/:conciergeId/agents")
 	{
 		agents.POST("", c.CreateAgent)
 		agents.GET("", c.ListAgents)
@@ -39,7 +39,7 @@ func (c *AgentController) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// CreateAgent handles POST /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
+// CreateAgent handles POST /api/v1/organisations/:organisationId/concierges/:conciergeId/agents
 func (c *AgentController) CreateAgent(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 
@@ -62,23 +62,23 @@ func (c *AgentController) CreateAgent(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := c.agentService.CreateAgent(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID, req)
+	resp, err := c.agentService.CreateAgent(ctx.Request.Context(), conciergeID, req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{
 		"data": resp,
 	})
 }
 
-// ListAgents handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents
+// ListAgents handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/agents
 func (c *AgentController) ListAgents(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 
-	agents, err := c.agentService.ListAgents(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID)
+	agents, err := c.agentService.ListAgents(ctx.Request.Context(), conciergeID)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
@@ -89,24 +89,24 @@ func (c *AgentController) ListAgents(ctx *gin.Context) {
 	})
 }
 
-// GetAgentByID handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
+// GetAgentByID handles GET /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId
 func (c *AgentController) GetAgentByID(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
 
-	resp, err := c.agentService.GetAgentByID(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID, agentID)
+	resp, err := c.agentService.GetAgentByID(ctx.Request.Context(), conciergeID, agentID)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
 }
 
-// UpdateAgent handles PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId
+// UpdateAgent handles PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId
 func (c *AgentController) UpdateAgent(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
@@ -137,25 +137,25 @@ func (c *AgentController) UpdateAgent(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := c.agentService.UpdateAgent(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID, agentID, ifMatch, req)
+	resp, err := c.agentService.UpdateAgent(ctx.Request.Context(), conciergeID, agentID, ifMatch, req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
 
-	ctx.Header("ETag", etag.Format(resp.Version))
+	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
 }
 
-// AssignInstruction handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
+// AssignInstruction handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId/instructions/:instructionId
 func (c *AgentController) AssignInstruction(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
 	instructionID := ctx.Param("instructionId")
 
-	err := c.agentService.AssignInstruction(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID, agentID, instructionID)
+	err := c.agentService.AssignInstruction(ctx.Request.Context(), conciergeID, agentID, instructionID)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
@@ -164,13 +164,13 @@ func (c *AgentController) AssignInstruction(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// UnassignInstruction handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/instructions/:instructionId
+// UnassignInstruction handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId/instructions/:instructionId
 func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
 	conciergeID := ctx.Param("conciergeId")
 	agentID := ctx.Param("agentId")
 	instructionID := ctx.Param("instructionId")
 
-	err := c.agentService.UnassignInstruction(ctx.Request.Context(), ctx.Param("conciergeVersionId"), conciergeID, agentID, instructionID)
+	err := c.agentService.UnassignInstruction(ctx.Request.Context(), conciergeID, agentID, instructionID)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
@@ -179,11 +179,10 @@ func (c *AgentController) UnassignInstruction(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// AssignTool handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
+// AssignTool handles POST/PUT /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId/tools/:toolId
 func (c *AgentController) AssignTool(ctx *gin.Context) {
 	err := c.agentService.AssignTool(
 		ctx.Request.Context(),
-		ctx.Param("conciergeVersionId"),
 		ctx.Param("conciergeId"),
 		ctx.Param("agentId"),
 		ctx.Param("toolId"),
@@ -195,11 +194,10 @@ func (c *AgentController) AssignTool(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// UnassignTool handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/concierge-versions/:conciergeVersionId/agents/:agentId/tools/:toolId
+// UnassignTool handles DELETE /api/v1/organisations/:organisationId/concierges/:conciergeId/agents/:agentId/tools/:toolId
 func (c *AgentController) UnassignTool(ctx *gin.Context) {
 	err := c.agentService.UnassignTool(
 		ctx.Request.Context(),
-		ctx.Param("conciergeVersionId"),
 		ctx.Param("conciergeId"),
 		ctx.Param("agentId"),
 		ctx.Param("toolId"),
