@@ -55,6 +55,8 @@ func writeServiceError(ctx *gin.Context, err error, opts ...errorContext) {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Concierge version not found"})
 	case errors.Is(err, service.ErrConciergeNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Concierge not found"})
+	case errors.Is(err, service.ErrAgentLimitReached):
+		ctx.JSON(http.StatusConflict, gin.H{"error": service.ErrAgentLimitReached.Error()})
 	case errors.Is(err, service.ErrAgentNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Agent not found"})
 	case errors.Is(err, service.ErrInstructionNotFound):

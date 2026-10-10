@@ -9,6 +9,7 @@ import (
 	"github.com/bangweiz/dubhu-designer/internal/mapper"
 	"github.com/bangweiz/dubhu-designer/internal/models"
 	"github.com/bangweiz/dubhu-designer/internal/repository"
+	"github.com/bangweiz/dubhu-designer/internal/service/util"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -46,10 +47,15 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeIDStr string, i
 		return nil, ErrConciergeNotFound
 	}
 
+	if len(concierge.Agents) >= models.MaxAgentsPerConcierge {
+		return nil, ErrAgentLimitReached
+	}
 	entity := mapper.ToInitialAgentEntity(conciergeID, input)
 	created, err := s.agentRepo.Create(ctx, conciergeID, entity)
 	if err != nil {
 		switch {
+		case errors.Is(err, repository.ErrAgentLimitReached):
+			return nil, ErrAgentLimitReached
 		case errors.Is(err, repository.ErrConciergeNotFound):
 			return nil, ErrConciergeNotFound
 		case errors.Is(err, repository.ErrAgentNameExists):
@@ -118,7 +124,7 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([
 	return mapper.ToAgentSummaryResponseDTOList(agents), nil
 }
 
-// UpdateAgent updates an existing agent within a concierge.
+// UpdateAgent updates an agent and resolves its response within one transaction.
 // Name, description, goal, and model are updated, and the agent updatedAt is advanced.
 // Returns ErrConciergeNotFound if concierge ID is invalid or concierge does not exist.
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
@@ -139,38 +145,40 @@ func (s *AgentService) UpdateAgent(ctx context.Context, conciergeIDStr string, a
 		return nil, ErrAgentETagMismatch
 	}
 
-	entity := &models.Agent{
-		ID:          agentID,
-		ConciergeID: conciergeID,
-		Name:        input.Name,
-		Description: input.Description,
-		Goal:        input.Goal,
-		Model:       models.Model(input.Model),
-	}
+	return util.RunInTransaction(ctx, s.agentRepo.Client(), func(txCtx context.Context) (*dto.AgentResponseDTO, error) {
+		entity := &models.Agent{
+			ID:          agentID,
+			ConciergeID: conciergeID,
+			Name:        input.Name,
+			Description: input.Description,
+			Goal:        input.Goal,
+			Model:       models.Model(input.Model),
+		}
 
-	updated, err := s.agentRepo.Update(ctx, conciergeID, agentID, expectedUpdatedAt, entity)
-	if err != nil {
-		if errors.Is(err, repository.ErrConciergeNotFound) {
-			return nil, ErrConciergeNotFound
+		updated, err := s.agentRepo.Update(txCtx, conciergeID, agentID, expectedUpdatedAt, entity)
+		if err != nil {
+			if errors.Is(err, repository.ErrConciergeNotFound) {
+				return nil, ErrConciergeNotFound
+			}
+			if errors.Is(err, repository.ErrAgentNotFound) {
+				return nil, ErrAgentNotFound
+			}
+			if errors.Is(err, repository.ErrAgentUpdateConflict) {
+				return nil, ErrAgentETagMismatch
+			}
+			if errors.Is(err, repository.ErrAgentNameExists) {
+				return nil, ErrAgentNameExists
+			}
+			return nil, err
 		}
-		if errors.Is(err, repository.ErrAgentNotFound) {
-			return nil, ErrAgentNotFound
-		}
-		if errors.Is(err, repository.ErrAgentUpdateConflict) {
-			return nil, ErrAgentETagMismatch
-		}
-		if errors.Is(err, repository.ErrAgentNameExists) {
-			return nil, ErrAgentNameExists
-		}
-		return nil, err
-	}
 
-	populated, err := s.agentRepo.GetByIDPopulated(ctx, updated.ID, conciergeID)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.ToAgentResponseDTO(&populated.Agent, populated.ResolvedInstructions, populated.ResolvedTools)
-	return &res, nil
+		populated, err := s.agentRepo.GetByIDPopulated(txCtx, updated.ID, conciergeID)
+		if err != nil {
+			return nil, err
+		}
+		res := mapper.ToAgentResponseDTO(&populated.Agent, populated.ResolvedInstructions, populated.ResolvedTools)
+		return &res, nil
+	})
 }
 
 // AssignInstruction assigns an instruction to an agent within a concierge.

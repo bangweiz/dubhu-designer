@@ -16,6 +16,7 @@ import (
 
 // ConciergeService handles business logic operations for concierges.
 type ConciergeService struct {
+	environmentRepo    *repository.EnvironmentRepository
 	conciergeRepo      *repository.ConciergeRepository
 	instructionRepo    *repository.InstructionRepository
 	toolRepo           *repository.ToolRepository
@@ -53,8 +54,9 @@ func (s *ConciergeService) UpdateConcierge(ctx context.Context, idStr, ifMatch s
 }
 
 // NewConciergeService creates a new ConciergeService instance.
-func NewConciergeService(conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, variableRepo *repository.VariableRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository) *ConciergeService {
+func NewConciergeService(conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository, variableRepo *repository.VariableRepository, savedConciergeRepo *repository.SavedConciergeVersionRepository, environmentRepo *repository.EnvironmentRepository) *ConciergeService {
 	return &ConciergeService{
+		environmentRepo:    environmentRepo,
 		conciergeRepo:      conciergeRepo,
 		instructionRepo:    instructionRepo,
 		toolRepo:           toolRepo,
@@ -262,5 +264,37 @@ func (s *ConciergeService) ListConcierges(ctx context.Context) ([]dto.ConciergeS
 
 func (s *ConciergeService) conciergeResponse(ctx context.Context, c *models.Concierge) (*dto.ConciergeResponseDTO, error) {
 	response := mapper.ToConciergeResponseDTO(c)
+	return &response, nil
+}
+
+// SetConciergeVersionDeployment changes only deployment metadata, preserving snapshot content.
+func (s *ConciergeService) SetConciergeVersionDeployment(ctx context.Context, conciergeIDStr, versionIDStr, environmentIDStr string, deploy bool) (*dto.SavedConciergeVersionResponseDTO, error) {
+	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
+	if err != nil {
+		return nil, ErrConciergeNotFound
+	}
+	versionID, err := bson.ObjectIDFromHex(versionIDStr)
+	if err != nil {
+		return nil, ErrConciergeVersionNotFound
+	}
+	environmentID, err := bson.ObjectIDFromHex(environmentIDStr)
+	if err != nil {
+		return nil, ErrEnvironmentNotFound
+	}
+	environment, err := s.environmentRepo.GetByID(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	if environment == nil {
+		return nil, ErrEnvironmentNotFound
+	}
+	saved, err := s.savedConciergeRepo.SetDeployment(ctx, conciergeID, versionID, environmentID, deploy)
+	if err != nil {
+		return nil, err
+	}
+	if saved == nil {
+		return nil, ErrConciergeVersionNotFound
+	}
+	response := mapper.ToSavedConciergeVersionResponseDTO(saved)
 	return &response, nil
 }

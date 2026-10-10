@@ -69,10 +69,22 @@ Concierge:
       items:
         $ref: '#/ConciergeVersionDescriptor'
 
+ConciergeVersionDeploymentRequest:
+  type: object
+  required: [environmentId]
+  properties:
+    environmentId:
+      type: string
+      description: ID of an environment belonging to this organisation
+
 SavedConciergeVersion:
   type: object
-  required: [id, conciergeId, version, name, description, agents, instructions, tools, variables, createdAt, updatedAt]
+  required: [id, conciergeId, version, name, description, agents, instructions, tools, variables, environmentIds, createdAt, updatedAt]
   properties:
+    environmentIds:
+      type: array
+      description: Environment IDs this saved version is deployed to; empty when undeployed
+      items: {type: string}
     id:
       type: string
       description: Concierge version ID

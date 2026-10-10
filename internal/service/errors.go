@@ -9,6 +9,7 @@ import (
 // Service errors form the application-level error contract consumed by the
 // transport layer. Repository-specific sentinel errors are translated to this contract.
 var (
+	ErrAgentLimitReached        = errors.New("a concierge can have at most 10 agents")
 	ErrOrganisationNameExists   = errors.New("organisation name already exists")
 	ErrAccountEmailExists       = errors.New("account email already exists in this organisation")
 	ErrUnauthenticated          = errors.New("invalid or expired credentials")

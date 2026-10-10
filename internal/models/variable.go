@@ -26,10 +26,10 @@ func (v *Variable) EffectiveType() VariableType {
 }
 
 type Variable struct {
-	Type           VariableType `bson:"type" json:"type"`
-	AuditFields    `bson:",inline"`
-	OrganisationID bson.ObjectID `bson:"organisation_id" json:"-"`
 	ID             bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	OrganisationID bson.ObjectID `bson:"organisation_id" json:"-"`
 	Name           string        `bson:"name" json:"name"`
 	Description    string        `bson:"description" json:"description"`
+	Type           VariableType  `bson:"type" json:"type"`
+	AuditFields    `bson:",inline"`
 }

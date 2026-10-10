@@ -6,18 +6,18 @@ import (
 
 // Instruction represents a document in the "instructions" collection.
 type Instruction struct {
-	Variables      []bson.ObjectID `bson:"variables" json:"variables"`
-	AuditFields    `bson:",inline"`
-	OrganisationID bson.ObjectID   `bson:"organisation_id" json:"-"`
 	ID             bson.ObjectID   `bson:"_id,omitempty" json:"id"`
+	OrganisationID bson.ObjectID   `bson:"organisation_id" json:"-"`
 	Name           string          `bson:"name" json:"name"`
 	Content        string          `bson:"content" json:"content"`
+	Variables      []bson.ObjectID `bson:"variables" json:"variables"`
 	Tools          []bson.ObjectID `bson:"tools" json:"tools"`
+	AuditFields    `bson:",inline"`
 }
 
 // PopulatedInstruction represents an Instruction with its referenced Tool documents resolved via aggregation.
 type PopulatedInstruction struct {
-	ResolvedVariables []Variable `bson:"resolved_variables"`
 	Instruction       `bson:",inline"`
-	ResolvedTools     []Tool `bson:"resolved_tools"`
+	ResolvedVariables []Variable `bson:"resolved_variables"`
+	ResolvedTools     []Tool     `bson:"resolved_tools"`
 }

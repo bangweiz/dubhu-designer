@@ -25,6 +25,11 @@ func NewAgentRepository(database *mongo.Database) *AgentRepository {
 	}
 }
 
+// Client returns the MongoDB client used for service transactions.
+func (r *AgentRepository) Client() *mongo.Client {
+	return r.collection.collection.Database().Client()
+}
+
 // InitIndexes initializes any required indexes for agent operations.
 func (r *AgentRepository) InitIndexes(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "organisation_id", Value: 1}, {Key: "_id", Value: 1}, {Key: "agents.name", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{"agents.0": bson.M{"$exists": true}})})
@@ -33,7 +38,7 @@ func (r *AgentRepository) InitIndexes(ctx context.Context) error {
 
 // Create atomically appends an Agent subdocument to a Concierge's agents array.
 // Returns ErrConciergeNotFound if the parent concierge does not exist.
-// Returns ErrAgentNameExists if an agent with the same name already exists in this concierge.
+// Returns ErrAgentNameExists for duplicate names and ErrAgentLimitReached at capacity.
 func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID, agent *models.Agent) (*models.Agent, error) {
 	principal, ok := identity.FromContext(ctx)
 	if !ok {
@@ -44,6 +49,7 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 	filter := bson.M{
 		"_id":         conciergeID,
 		"agents.name": bson.M{"$ne": agent.Name},
+		fmt.Sprintf("agents.%d", models.MaxAgentsPerConcierge-1): bson.M{"$exists": false},
 	}
 	update := bson.M{
 		"$push": bson.M{"agents": agent},
@@ -59,13 +65,18 @@ func (r *AgentRepository) Create(ctx context.Context, conciergeID bson.ObjectID,
 	}
 
 	if res.MatchedCount == 0 {
-		count, err := r.collection.CountDocuments(ctx, bson.M{"_id": conciergeID})
+		var concierge models.Concierge
+		err := r.collection.FindOne(ctx, bson.M{"_id": conciergeID}).Decode(&concierge)
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrConciergeNotFound
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify concierge: %w", err)
 		}
-		if count == 0 {
-			return nil, ErrConciergeNotFound
+		if len(concierge.Agents) >= models.MaxAgentsPerConcierge {
+			return nil, ErrAgentLimitReached
 		}
+
 		return nil, ErrAgentNameExists
 	}
 

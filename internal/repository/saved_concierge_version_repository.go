@@ -59,3 +59,20 @@ func (r *SavedConciergeVersionRepository) Create(ctx context.Context, saved *mod
 	}
 	return nil
 }
+
+// SetDeployment atomically adds or removes a single environment without losing other deployments.
+func (r *SavedConciergeVersionRepository) SetDeployment(ctx context.Context, conciergeID, versionID, environmentID bson.ObjectID, deploy bool) (*models.SavedConciergeVersion, error) {
+	operator := "$pull"
+	if deploy {
+		operator = "$addToSet"
+	}
+	var saved models.SavedConciergeVersion
+	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": versionID, "concierge_id": conciergeID}, bson.M{operator: bson.M{"environment_ids": environmentID}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&saved)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("update concierge version deployment: %w", err)
+	}
+	return &saved, nil
+}

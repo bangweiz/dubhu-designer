@@ -32,6 +32,7 @@ func (c *ConciergeController) RegisterRoutes(rg *gin.RouterGroup) {
 		concierges.GET("/:conciergeId", c.GetConciergeByID)
 		concierges.PUT("/:conciergeId", c.UpdateConcierge)
 		concierges.GET("/:conciergeId/concierge-versions/:conciergeVersionId", c.GetConciergeVersion)
+		concierges.POST("/:conciergeId/concierge-versions/:conciergeVersionId", c.SetConciergeVersionDeployment)
 	}
 	rg.POST("/concierge/:conciergeAction", c.SaveConcierge)
 }
@@ -148,4 +149,33 @@ func (c *ConciergeController) GetConciergeByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": resp,
 	})
+}
+
+// SetConciergeVersionDeployment handles the :deploy and :undeploy version actions.
+func (c *ConciergeController) SetConciergeVersionDeployment(ctx *gin.Context) {
+	action := ctx.Param("conciergeVersionId")
+	versionID, deploy := strings.CutSuffix(action, ":deploy")
+	if !deploy {
+		var ok bool
+		versionID, ok = strings.CutSuffix(action, ":undeploy")
+		if !ok {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+			return
+		}
+	}
+	if versionID == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	var req dto.ConciergeVersionDeploymentDTO
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+	response, err := c.conciergeService.SetConciergeVersionDeployment(ctx.Request.Context(), ctx.Param("conciergeId"), versionID, strings.TrimSpace(req.EnvironmentID), deploy)
+	if err != nil {
+		writeServiceError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": response})
 }

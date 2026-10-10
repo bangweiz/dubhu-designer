@@ -74,7 +74,7 @@ func main() {
 		insert("accounts", models.Account{ID: a.id, OrganisationID: orgID, Name: a.name, Email: a.email, Role: a.role, PasswordHash: string(hash), AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})
 	}
 	toolIDs := []bson.ObjectID{bson.NewObjectID(), bson.NewObjectID(), bson.NewObjectID()}
-	toolNames := []string{"Find a reservation", "Explore local places", "Create support ticket"}
+	toolNames := []string{"find_a_reservation", "explore_local_places", "create_support_ticket"}
 	toolDescriptions := []string{"Look up a guest reservation using a confirmation number.", "Discover nearby restaurants, experiences, and hidden gems.", "Escalate a customer request to the support team."}
 	for i, name := range toolNames {
 		insert("tools", models.Tool{ID: toolIDs[i], OrganisationID: orgID, Name: name, Description: toolDescriptions[i], Inputs: []models.ToolInput{{Name: []string{"confirmation_number", "location", "message"}[i], Description: "Information provided by the customer", Required: true}}, Outputs: []models.ToolOutput{{Name: "result", Description: "The result of the action"}}, AuditFields: models.AuditFields{CreatedBy: rootID, UpdatedBy: rootID, CreatedAt: now, UpdatedAt: now}})

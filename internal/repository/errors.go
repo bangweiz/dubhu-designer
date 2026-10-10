@@ -5,6 +5,7 @@ import "errors"
 // Repository errors describe persistence-layer outcomes. Services translate
 // these errors before returning them to callers outside this package.
 var (
+	ErrAgentLimitReached      = errors.New("a concierge can have at most 10 agents")
 	ErrOrganisationNameExists = errors.New("organisation name already exists")
 	ErrAccountConflict        = errors.New("account already exists")
 	ErrVariableNameExists     = errors.New("variable name already exists")

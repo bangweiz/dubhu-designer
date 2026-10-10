@@ -45,8 +45,9 @@ func ToSavedConciergeVersionResponseDTO(saved *models.SavedConciergeVersion) dto
 		variables = append(variables, ToVariableResponseDTO(&variable))
 	}
 	return dto.SavedConciergeVersionResponseDTO{
-		Variables: variables,
-		ID:        saved.ID.Hex(), ConciergeID: saved.ConciergeID.Hex(), Name: saved.Name, Description: saved.Description,
+		EnvironmentIDs: objectIDStrings(saved.EnvironmentIDs),
+		Variables:      variables,
+		ID:             saved.ID.Hex(), ConciergeID: saved.ConciergeID.Hex(), Name: saved.Name, Description: saved.Description,
 		Version: saved.Version, Agents: agents, Instructions: instructions, Tools: ToToolResponseDTOList(saved.Tools),
 		CreatedBy: auditID(saved.CreatedBy), UpdatedBy: auditID(saved.UpdatedBy), CreatedAt: saved.CreatedAt, UpdatedAt: saved.UpdatedAt,
 	}
