@@ -46,7 +46,9 @@ CreateToolRequest:
     name:
       type: string
       maxLength: 200
-      description: Tool name
+      minLength: 1
+      pattern: '^[A-Za-z_][A-Za-z0-9_]*$'
+      description: Tool name; English letters, digits, and underscores only, starting with a letter or underscore
       example: "http_request"
     description:
       type: string
@@ -75,7 +77,9 @@ UpdateToolRequest:
     name:
       type: string
       maxLength: 200
-      description: Tool name
+      minLength: 1
+      pattern: '^[A-Za-z_][A-Za-z0-9_]*$'
+      description: Tool name; English letters, digits, and underscores only, starting with a letter or underscore
       example: "http_request_v2"
     description:
       type: string

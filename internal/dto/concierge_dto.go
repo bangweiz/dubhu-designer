@@ -35,21 +35,27 @@ type ConciergeResponseDTO struct {
 }
 type ConciergeSummaryResponseDTO = ConciergeResponseDTO
 
-// SavedConciergeVersionResponseDTO is the public immutable snapshot representation.
+// ConciergeVersionDeploymentDTO identifies the target environment for a version action.
+type ConciergeVersionDeploymentDTO struct {
+	EnvironmentID string `json:"environmentId" binding:"required"`
+}
+
+// SavedConciergeVersionResponseDTO exposes snapshot content and deployment metadata.
 type SavedConciergeVersionResponseDTO struct {
-	Variables    []VariableResponseDTO         `json:"variables"`
-	ID           string                        `json:"id"`
-	ConciergeID  string                        `json:"conciergeId"`
-	Name         string                        `json:"name"`
-	Description  string                        `json:"description"`
-	Version      int                           `json:"version"`
-	Agents       []SavedAgentResponseDTO       `json:"agents"`
-	Instructions []SavedInstructionResponseDTO `json:"instructions"`
-	Tools        []ToolResponseDTO             `json:"tools"`
-	CreatedBy    string                        `json:"createdBy"`
-	UpdatedBy    string                        `json:"updatedBy"`
-	CreatedAt    time.Time                     `json:"createdAt"`
-	UpdatedAt    time.Time                     `json:"updatedAt"`
+	EnvironmentIDs []string                      `json:"environmentIds"`
+	Variables      []VariableResponseDTO         `json:"variables"`
+	ID             string                        `json:"id"`
+	ConciergeID    string                        `json:"conciergeId"`
+	Name           string                        `json:"name"`
+	Description    string                        `json:"description"`
+	Version        int                           `json:"version"`
+	Agents         []SavedAgentResponseDTO       `json:"agents"`
+	Instructions   []SavedInstructionResponseDTO `json:"instructions"`
+	Tools          []ToolResponseDTO             `json:"tools"`
+	CreatedBy      string                        `json:"createdBy"`
+	UpdatedBy      string                        `json:"updatedBy"`
+	CreatedAt      time.Time                     `json:"createdAt"`
+	UpdatedAt      time.Time                     `json:"updatedAt"`
 }
 
 // SavedAgentResponseDTO retains references to documents contained in the snapshot.

@@ -19,11 +19,11 @@ type ToolOutput struct {
 
 // Tool represents a document in the "tools" collection.
 type Tool struct {
-	AuditFields    `bson:",inline"`
-	OrganisationID bson.ObjectID `bson:"organisation_id" json:"-"`
 	ID             bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	OrganisationID bson.ObjectID `bson:"organisation_id" json:"-"`
 	Name           string        `bson:"name" json:"name"`
 	Description    string        `bson:"description" json:"description"`
 	Inputs         []ToolInput   `bson:"inputs" json:"inputs"`
 	Outputs        []ToolOutput  `bson:"outputs" json:"outputs"`
+	AuditFields    `bson:",inline"`
 }

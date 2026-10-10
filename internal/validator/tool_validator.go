@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/bangweiz/dubhu-designer/internal/dto"
 )
@@ -58,7 +59,7 @@ func validateToolOutputs(outputs []dto.ToolOutputDTO) ValidationErrors {
 func ValidateCreateTool(req *dto.CreateToolDTO) ValidationErrors {
 	var errs ValidationErrors
 
-	if err := validateName("name", req.Name); err != nil {
+	if err := validateToolName(req.Name); err != nil {
 		errs = append(errs, *err)
 	}
 
@@ -79,7 +80,7 @@ func ValidateCreateTool(req *dto.CreateToolDTO) ValidationErrors {
 func ValidateUpdateTool(req *dto.UpdateToolDTO) ValidationErrors {
 	var errs ValidationErrors
 
-	if err := validateName("name", req.Name); err != nil {
+	if err := validateToolName(req.Name); err != nil {
 		errs = append(errs, *err)
 	}
 
@@ -94,4 +95,16 @@ func ValidateUpdateTool(req *dto.UpdateToolDTO) ValidationErrors {
 		return nil
 	}
 	return errs
+}
+
+var toolNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+func validateToolName(name string) *FieldError {
+	if err := validateName("name", name); err != nil {
+		return err
+	}
+	if !toolNamePattern.MatchString(name) {
+		return &FieldError{Field: "name", Reason: "must contain only English letters, digits, and underscores, and cannot start with a digit", Value: name}
+	}
+	return nil
 }

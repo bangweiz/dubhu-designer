@@ -15,13 +15,13 @@ const (
 )
 
 type Account struct {
-	AuditFields    `bson:",inline"`
 	ID             bson.ObjectID `bson:"_id,omitempty" json:"id"`
 	OrganisationID bson.ObjectID `bson:"organisation_id" json:"organisationId"`
 	Name           string        `bson:"name" json:"name"`
 	Email          string        `bson:"email" json:"email"`
 	PasswordHash   string        `bson:"password_hash" json:"-"`
 	Role           AccountRole   `bson:"role" json:"role"`
+	AuditFields    `bson:",inline"`
 }
 
 type AuthSession struct {

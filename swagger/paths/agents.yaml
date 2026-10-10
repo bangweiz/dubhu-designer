@@ -3,7 +3,7 @@
     - $ref: '../parameters.yaml#/OrganisationID'
   post:
     summary: Create a new agent
-    description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge.
+    description: Creates a new agent specification scoped to the specified concierge. Requires name, description, goal, and model. Agent name must be unique within the same concierge. A concierge can have at most 10 agents; adding another returns HTTP 409.
     operationId: createAgent
     tags:
       - Agents
@@ -66,7 +66,7 @@
                   type: string
                   example: "Concierge not found"
       '409':
-        description: Conflict (agent name already exists for this concierge)
+        description: Conflict (agent name already exists or concierge already has 10 agents)
         content:
           application/json:
             schema:

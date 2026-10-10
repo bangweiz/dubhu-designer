@@ -62,7 +62,7 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 	must(agentRepo.InitIndexes(ctx))
 	variableService := service.NewVariableService(variableRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo, variableRepo)
-	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, variableRepo, repository.NewSavedConciergeVersionRepository(database))
+	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, variableRepo, repository.NewSavedConciergeVersionRepository(database), repository.NewEnvironmentRepository(database))
 	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo, toolRepo)
 	existingVariables, err := variableRepo.List(ctx)
 	must(err)

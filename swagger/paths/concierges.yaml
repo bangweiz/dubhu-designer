@@ -265,3 +265,85 @@
                   $ref: '../schemas/concierges.yaml#/SavedConciergeVersion'
       '404':
         description: Concierge version not found
+
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:deploy:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+    - name: conciergeId
+      in: path
+      required: true
+      schema: {type: string}
+    - name: conciergeVersionId
+      in: path
+      required: true
+      schema: {type: string}
+  post:
+    summary: Deploy a saved concierge version to an environment
+    description: Idempotently adds this environment assignment. Other environment assignments and snapshot content are preserved. Multiple saved versions may be assigned to the same environment.
+    operationId: deployConciergeVersion
+    tags: [Concierges]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/concierges.yaml#/ConciergeVersionDeploymentRequest'
+    responses:
+      '200':
+        description: Saved snapshot with current environment assignments
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/SavedConciergeVersion'
+      '400':
+        description: Invalid request body
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
+      '404':
+        description: Saved version or environment not found in this organisation
+      '500':
+        description: Internal server error
+
+/organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:undeploy:
+  parameters:
+    - $ref: '../parameters.yaml#/OrganisationID'
+    - name: conciergeId
+      in: path
+      required: true
+      schema: {type: string}
+    - name: conciergeVersionId
+      in: path
+      required: true
+      schema: {type: string}
+  post:
+    summary: Undeploy a saved concierge version to an environment
+    description: Idempotently removes this environment assignment. Other environment assignments and snapshot content are preserved. Multiple saved versions may be assigned to the same environment.
+    operationId: undeployConciergeVersion
+    tags: [Concierges]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/concierges.yaml#/ConciergeVersionDeploymentRequest'
+    responses:
+      '200':
+        description: Saved snapshot with current environment assignments
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../schemas/concierges.yaml#/SavedConciergeVersion'
+      '400':
+        description: Invalid request body
+      '401': {$ref: '../responses.yaml#/Unauthenticated'}
+      '403': {$ref: '../responses.yaml#/Forbidden'}
+      '404':
+        description: Saved version or environment not found in this organisation
+      '500':
+        description: Internal server error

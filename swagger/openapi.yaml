@@ -48,6 +48,10 @@ paths:
     $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}'
   /organisations/{organisationId}/concierge/{conciergeId}:save:
     $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierge~1{conciergeId}:save'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:deploy:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}:deploy'
+  /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:undeploy:
+    $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}:undeploy'
   /organisations/{organisationId}/concierges/{conciergeId}/concierge-versions/{conciergeVersionId}:
     $ref: './paths/concierges.yaml#/~1organisations~1{organisationId}~1concierges~1{conciergeId}~1concierge-versions~1{conciergeVersionId}'
   /organisations/{organisationId}/concierges/{conciergeId}/agents:
