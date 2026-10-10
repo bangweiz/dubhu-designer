@@ -20,6 +20,7 @@ func (s *VariableService) GetVariableByID(ctx context.Context, idStr string) (*d
 	if err != nil {
 		return nil, ErrVariableNotFound
 	}
+
 	e, err := s.variableRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -27,6 +28,7 @@ func (s *VariableService) GetVariableByID(ctx context.Context, idStr string) (*d
 	if e == nil {
 		return nil, ErrVariableNotFound
 	}
+
 	response := mapper.ToVariableResponseDTO(e)
 	return &response, nil
 }
@@ -43,6 +45,7 @@ func (s *VariableService) CreateVariable(ctx context.Context, input dto.CreateVa
 	if err != nil {
 		return nil, err
 	}
+
 	response := mapper.ToVariableResponseDTO(e)
 	return &response, nil
 }
@@ -52,22 +55,30 @@ func (s *VariableService) ListVariables(ctx context.Context) ([]dto.VariableResp
 	if err != nil {
 		return nil, err
 	}
+
 	result := make([]dto.VariableResponseDTO, 0, len(variables))
 	for _, e := range variables {
 		result = append(result, mapper.ToVariableResponseDTO(&e))
 	}
+
 	return result, nil
 }
 
-func (s *VariableService) UpdateVariable(ctx context.Context, idStr, ifMatch string, input dto.UpdateVariableDTO) (*dto.VariableResponseDTO, error) {
+func (s *VariableService) UpdateVariable(
+	ctx context.Context,
+	idStr, ifMatch string,
+	input dto.UpdateVariableDTO,
+) (*dto.VariableResponseDTO, error) {
 	id, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrVariableNotFound
 	}
+
 	updatedAt, err := etag.Parse(ifMatch)
 	if err != nil {
 		return nil, ErrVariableETagMismatch
 	}
+
 	e, err := s.variableRepo.Update(ctx, id, updatedAt, input.Name, input.Description)
 	if errors.Is(err, repository.ErrUpdateConflict) {
 		existing, lookupErr := s.variableRepo.GetByID(ctx, id)
@@ -77,6 +88,7 @@ func (s *VariableService) UpdateVariable(ctx context.Context, idStr, ifMatch str
 		if existing == nil {
 			return nil, ErrVariableNotFound
 		}
+
 		return nil, ErrVariableETagMismatch
 	}
 	if errors.Is(err, repository.ErrVariableNameExists) {
@@ -85,6 +97,7 @@ func (s *VariableService) UpdateVariable(ctx context.Context, idStr, ifMatch str
 	if err != nil {
 		return nil, err
 	}
+
 	response := mapper.ToVariableResponseDTO(e)
 	return &response, nil
 }

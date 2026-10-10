@@ -38,6 +38,7 @@ func (d *CreateToolDTO) Trim() {
 		d.Inputs[i].Name = strings.TrimSpace(d.Inputs[i].Name)
 		d.Inputs[i].Description = strings.TrimSpace(d.Inputs[i].Description)
 	}
+
 	for i := range d.Outputs {
 		d.Outputs[i].Name = strings.TrimSpace(d.Outputs[i].Name)
 		d.Outputs[i].Description = strings.TrimSpace(d.Outputs[i].Description)
@@ -60,6 +61,7 @@ func (d *UpdateToolDTO) Trim() {
 		d.Inputs[i].Name = strings.TrimSpace(d.Inputs[i].Name)
 		d.Inputs[i].Description = strings.TrimSpace(d.Inputs[i].Description)
 	}
+
 	for i := range d.Outputs {
 		d.Outputs[i].Name = strings.TrimSpace(d.Outputs[i].Name)
 		d.Outputs[i].Description = strings.TrimSpace(d.Outputs[i].Description)

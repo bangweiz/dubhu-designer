@@ -19,6 +19,7 @@ func ValidateCreateInstruction(req *dto.CreateInstructionDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }
 
@@ -37,5 +38,6 @@ func ValidateUpdateInstruction(req *dto.UpdateInstructionDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }

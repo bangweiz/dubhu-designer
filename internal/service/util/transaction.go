@@ -20,6 +20,7 @@ func RunInTransaction[T any](ctx context.Context, client *mongo.Client, fn func(
 		var zero T
 		return zero, fmt.Errorf("failed to start transaction session: %w", err)
 	}
+
 	defer session.EndSession(ctx)
 
 	result, err := session.WithTransaction(ctx, func(sessCtx context.Context) (any, error) {

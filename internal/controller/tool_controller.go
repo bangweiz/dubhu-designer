@@ -41,6 +41,7 @@ func (c *ToolController) ListToolUsages(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 

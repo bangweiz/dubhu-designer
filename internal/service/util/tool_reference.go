@@ -27,5 +27,6 @@ func ExtractToolIDs(content string) []string {
 			}
 		}
 	}
+
 	return ids
 }

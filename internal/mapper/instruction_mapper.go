@@ -17,6 +17,7 @@ func ToInstructionUsageResponseDTOList(usages []repository.InstructionUsageResul
 			AgentID: usage.AgentID.Hex(), AgentName: usage.AgentName,
 		})
 	}
+
 	return result
 }
 
@@ -28,7 +29,14 @@ func ToInitialInstructionEntity(input dto.CreateInstructionDTO, toolIDs, variabl
 		toolIDs = []bson.ObjectID{}
 	}
 
-	return &models.Instruction{ID: bson.NewObjectID(), Name: input.Name, Content: input.Content, Tools: toolIDs, Variables: variableIDs, AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now}}
+	return &models.Instruction{
+		ID:          bson.NewObjectID(),
+		Name:        input.Name,
+		Content:     input.Content,
+		Tools:       toolIDs,
+		Variables:   variableIDs,
+		AuditFields: models.AuditFields{CreatedAt: now, UpdatedAt: now},
+	}
 }
 
 // ToInstructionSummaryResponseDTO converts a domain Instruction model to InstructionSummaryResponseDTO.
@@ -48,6 +56,7 @@ func ToInstructionSummaryResponseDTOList(instructions []models.Instruction) []dt
 	for i := range instructions {
 		res = append(res, ToInstructionSummaryResponseDTO(&instructions[i]))
 	}
+
 	return res
 }
 
@@ -70,12 +79,14 @@ func ToInstructionResponseDTO(inst *models.Instruction, tools []models.Tool, var
 	for _, variable := range variables {
 		variableMap[variable.ID] = variable
 	}
+
 	variableDTOs := make([]dto.VariableResponseDTO, 0, len(inst.Variables))
 	for _, id := range inst.Variables {
 		if variable, ok := variableMap[id]; ok {
 			variableDTOs = append(variableDTOs, ToVariableResponseDTO(&variable))
 		}
 	}
+
 	return dto.InstructionResponseDTO{
 		Variables: variableDTOs,
 		ID:        inst.ID.Hex(),

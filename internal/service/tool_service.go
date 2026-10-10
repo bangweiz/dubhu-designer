@@ -22,6 +22,7 @@ func (s *ToolService) ListToolUsages(ctx context.Context, idStr string) ([]dto.T
 	if err != nil {
 		return nil, ErrToolNotFound
 	}
+
 	tool, err := s.toolRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -29,18 +30,22 @@ func (s *ToolService) ListToolUsages(ctx context.Context, idStr string) ([]dto.T
 	if tool == nil {
 		return nil, ErrToolNotFound
 	}
+
 	instructions, err := s.toolRepo.ListReferencingInstructions(ctx, id)
 	if err != nil {
 		return nil, err
 	}
+
 	ids := make([]bson.ObjectID, 0, len(instructions))
 	for _, instruction := range instructions {
 		ids = append(ids, instruction.ID)
 	}
+
 	agents, err := s.toolRepo.ListAgentUsages(ctx, id, ids)
 	if err != nil {
 		return nil, err
 	}
+
 	return mapper.ToInstructionUsageResponseDTOList(agents), nil
 }
 
@@ -60,6 +65,7 @@ func (s *ToolService) CreateTool(ctx context.Context, input dto.CreateToolDTO) (
 		if errors.Is(err, repository.ErrToolNameExists) {
 			return nil, ErrToolNameExists
 		}
+
 		return nil, err
 	}
 
@@ -99,7 +105,12 @@ func (s *ToolService) ListTools(ctx context.Context) ([]dto.ToolResponseDTO, err
 
 // UpdateTool updates an existing tool with optimistic concurrency control.
 // Matches by ID and updated_at, then advances the timestamp.
-func (s *ToolService) UpdateTool(ctx context.Context, idStr string, ifMatch string, input dto.UpdateToolDTO) (*dto.ToolResponseDTO, error) {
+func (s *ToolService) UpdateTool(
+	ctx context.Context,
+	idStr string,
+	ifMatch string,
+	input dto.UpdateToolDTO,
+) (*dto.ToolResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrToolNotFound
@@ -126,11 +137,13 @@ func (s *ToolService) UpdateTool(ctx context.Context, idStr string, ifMatch stri
 			if getErr == nil && existing == nil {
 				return nil, ErrToolNotFound
 			}
+
 			return nil, ErrToolETagMismatch
 		}
 		if errors.Is(err, repository.ErrToolNameExists) {
 			return nil, ErrToolNameExists
 		}
+
 		return nil, err
 	}
 

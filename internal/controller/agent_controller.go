@@ -191,6 +191,7 @@ func (c *AgentController) AssignTool(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.Status(http.StatusNoContent)
 }
 
@@ -206,5 +207,6 @@ func (c *AgentController) UnassignTool(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.Status(http.StatusNoContent)
 }

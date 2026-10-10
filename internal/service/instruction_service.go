@@ -27,6 +27,7 @@ func (s *InstructionService) ListInstructionUsages(ctx context.Context, idStr st
 	if err != nil {
 		return nil, ErrInstructionNotFound
 	}
+
 	instruction, err := s.instructionRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -34,10 +35,12 @@ func (s *InstructionService) ListInstructionUsages(ctx context.Context, idStr st
 	if instruction == nil {
 		return nil, ErrInstructionNotFound
 	}
+
 	usages, err := s.instructionRepo.ListUsages(ctx, id)
 	if err != nil {
 		return nil, err
 	}
+
 	return mapper.ToInstructionUsageResponseDTOList(usages), nil
 }
 
@@ -159,7 +162,10 @@ func (s *InstructionService) resolveVariables(ctx context.Context, content strin
 
 // CreateInstruction validates tool and variable references, maps DTO to a new Instruction entity, and persists it.
 // Returns the created instruction with fully populated tools and variables.
-func (s *InstructionService) CreateInstruction(ctx context.Context, input dto.CreateInstructionDTO) (*dto.InstructionResponseDTO, error) {
+func (s *InstructionService) CreateInstruction(
+	ctx context.Context,
+	input dto.CreateInstructionDTO,
+) (*dto.InstructionResponseDTO, error) {
 	toolIDs, tools, err := s.resolveTools(ctx, input.Content)
 	if err != nil {
 		return nil, err
@@ -169,12 +175,14 @@ func (s *InstructionService) CreateInstruction(ctx context.Context, input dto.Cr
 	if err != nil {
 		return nil, err
 	}
+
 	entity := mapper.ToInitialInstructionEntity(input, toolIDs, variableIDs)
 	created, err := s.instructionRepo.Create(ctx, entity)
 	if err != nil {
 		if errors.Is(err, repository.ErrInstructionNameExists) {
 			return nil, ErrInstructionNameExists
 		}
+
 		return nil, err
 	}
 
@@ -213,7 +221,12 @@ func (s *InstructionService) ListInstructions(ctx context.Context) ([]dto.Instru
 
 // UpdateInstruction updates an existing instruction with optimistic concurrency control.
 // Returns the updated instruction with fully populated tools and variables.
-func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string, ifMatch string, input dto.UpdateInstructionDTO) (*dto.InstructionResponseDTO, error) {
+func (s *InstructionService) UpdateInstruction(
+	ctx context.Context,
+	idStr string,
+	ifMatch string,
+	input dto.UpdateInstructionDTO,
+) (*dto.InstructionResponseDTO, error) {
 	objectID, err := bson.ObjectIDFromHex(idStr)
 	if err != nil {
 		return nil, ErrInstructionNotFound
@@ -233,6 +246,7 @@ func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string
 	if err != nil {
 		return nil, err
 	}
+
 	updateDoc := bson.M{
 		"variables":  variableIDs,
 		"name":       input.Name,
@@ -248,11 +262,13 @@ func (s *InstructionService) UpdateInstruction(ctx context.Context, idStr string
 			if getErr == nil && existing == nil {
 				return nil, ErrInstructionNotFound
 			}
+
 			return nil, ErrInstructionETagMismatch
 		}
 		if errors.Is(err, repository.ErrInstructionNameExists) {
 			return nil, ErrInstructionNameExists
 		}
+
 		return nil, err
 	}
 

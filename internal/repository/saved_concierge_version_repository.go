@@ -30,15 +30,20 @@ func (r *SavedConciergeVersionRepository) Client() *mongo.Client {
 }
 
 // GetByID loads a snapshot scoped to its parent concierge in one query.
-func (r *SavedConciergeVersionRepository) GetByID(ctx context.Context, conciergeID, versionID bson.ObjectID) (*models.SavedConciergeVersion, error) {
+func (r *SavedConciergeVersionRepository) GetByID(
+	ctx context.Context,
+	conciergeID, versionID bson.ObjectID,
+) (*models.SavedConciergeVersion, error) {
 	var saved models.SavedConciergeVersion
 	err := r.collection.FindOne(ctx, bson.M{"_id": versionID, "concierge_id": conciergeID}).Decode(&saved)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to find concierge version: %w", err)
 	}
+
 	return &saved, nil
 }
 
@@ -50,6 +55,7 @@ func (r *SavedConciergeVersionRepository) InitIndexes(ctx context.Context) error
 	if _, err := r.collection.Indexes().CreateOne(ctx, index); err != nil {
 		return fmt.Errorf("failed to create saved concierge indexes: %w", err)
 	}
+
 	return nil
 }
 
@@ -57,22 +63,34 @@ func (r *SavedConciergeVersionRepository) Create(ctx context.Context, saved *mod
 	if _, err := r.collection.InsertOne(ctx, saved); err != nil {
 		return fmt.Errorf("failed to save concierge snapshot: %w", err)
 	}
+
 	return nil
 }
 
 // SetDeployment atomically adds or removes a single environment without losing other deployments.
-func (r *SavedConciergeVersionRepository) SetDeployment(ctx context.Context, conciergeID, versionID, environmentID bson.ObjectID, deploy bool) (*models.SavedConciergeVersion, error) {
+func (r *SavedConciergeVersionRepository) SetDeployment(
+	ctx context.Context,
+	conciergeID, versionID, environmentID bson.ObjectID,
+	deploy bool,
+) (*models.SavedConciergeVersion, error) {
 	operator := "$pull"
 	if deploy {
 		operator = "$addToSet"
 	}
+
 	var saved models.SavedConciergeVersion
-	err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": versionID, "concierge_id": conciergeID}, bson.M{operator: bson.M{"environment_ids": environmentID}}, options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&saved)
+	err := r.collection.FindOneAndUpdate(
+		ctx,
+		bson.M{"_id": versionID, "concierge_id": conciergeID},
+		bson.M{operator: bson.M{"environment_ids": environmentID}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&saved)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("update concierge version deployment: %w", err)
 	}
+
 	return &saved, nil
 }
