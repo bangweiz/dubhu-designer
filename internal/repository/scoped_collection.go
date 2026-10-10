@@ -20,35 +20,44 @@ type scopedCollection struct{ collection *mongo.Collection }
 func newScopedCollection(db *mongo.Database, name string) *scopedCollection {
 	return &scopedCollection{collection: db.Collection(name)}
 }
+
 func (c *scopedCollection) sibling(name string) *scopedCollection {
 	return newScopedCollection(c.collection.Database(), name)
 }
+
 func scopedFilter(ctx context.Context, filter any) (bson.M, error) {
 	id, err := identity.OrganisationID(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return bson.M{"$and": bson.A{bson.M{"organisation_id": id}, filter}}, nil
 }
+
 func (c *scopedCollection) Find(ctx context.Context, filter any, opts ...options.Lister[options.FindOptions]) (*mongo.Cursor, error) {
 	f, err := scopedFilter(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
+
 	return c.collection.Find(ctx, f, opts...)
 }
+
 func (c *scopedCollection) FindOne(ctx context.Context, filter any, opts ...options.Lister[options.FindOneOptions]) *mongo.SingleResult {
 	f, err := scopedFilter(ctx, filter)
 	if err != nil {
 		return mongo.NewSingleResultFromDocument(bson.M{}, err, nil)
 	}
+
 	return c.collection.FindOne(ctx, f, opts...)
 }
+
 func (c *scopedCollection) CountDocuments(ctx context.Context, filter any, opts ...options.Lister[options.CountOptions]) (int64, error) {
 	f, err := scopedFilter(ctx, filter)
 	if err != nil {
 		return 0, err
 	}
+
 	return c.collection.CountDocuments(ctx, f, opts...)
 }
 
@@ -66,14 +75,17 @@ func (c *scopedCollection) prepareUpdate(ctx context.Context, filter bson.M, upd
 	if err != nil {
 		return nil, nil, err
 	}
+
 	audited, err := auditUpdate(ctx, update)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	document, ok := audited.(bson.M)
 	if !ok {
 		return nil, nil, fmt.Errorf("timestamp updates require an operator document")
 	}
+
 	set := document["$set"].(bson.M)
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	latest := current.UpdatedAt
@@ -85,25 +97,33 @@ func (c *scopedCollection) prepareUpdate(ctx context.Context, filter bson.M, upd
 	if !now.After(latest) {
 		now = latest.Add(time.Millisecond)
 	}
+
 	set["updated_at"] = now
 	for key := range set {
 		if strings.HasSuffix(key, ".updated_at") {
 			set[key] = now
 		}
 	}
+
 	var previous any = current.UpdatedAt
 	if current.UpdatedAt.IsZero() {
 		previous = bson.M{"$exists": false}
 	}
+
 	guarded := bson.M{"$and": bson.A{filter, bson.M{"_id": current.ID, "updated_at": previous}}}
 	return guarded, document, nil
 }
 
-func (c *scopedCollection) UpdateOne(ctx context.Context, filter, update any, opts ...options.Lister[options.UpdateOneOptions]) (*mongo.UpdateResult, error) {
+func (c *scopedCollection) UpdateOne(
+	ctx context.Context,
+	filter, update any,
+	opts ...options.Lister[options.UpdateOneOptions],
+) (*mongo.UpdateResult, error) {
 	f, err := scopedFilter(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
+
 	for attempts := 0; attempts < 8; attempts++ {
 		guarded, stamped, err := c.prepareUpdate(ctx, f, update)
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -112,39 +132,56 @@ func (c *scopedCollection) UpdateOne(ctx context.Context, filter, update any, op
 		if err != nil {
 			return nil, err
 		}
+
 		result, err := c.collection.UpdateOne(ctx, guarded, stamped, opts...)
 		if err != nil || result.MatchedCount > 0 {
 			return result, err
 		}
 	}
+
 	return nil, ErrUpdateConflict
 }
-func (c *scopedCollection) FindOneAndUpdate(ctx context.Context, filter, update any, opts ...options.Lister[options.FindOneAndUpdateOptions]) *mongo.SingleResult {
+
+func (c *scopedCollection) FindOneAndUpdate(
+	ctx context.Context,
+	filter, update any,
+	opts ...options.Lister[options.FindOneAndUpdateOptions],
+) *mongo.SingleResult {
 	f, err := scopedFilter(ctx, filter)
 	if err != nil {
 		return mongo.NewSingleResultFromDocument(bson.M{}, err, nil)
 	}
+
 	for attempts := 0; attempts < 8; attempts++ {
 		guarded, stamped, err := c.prepareUpdate(ctx, f, update)
 		if err != nil {
 			return mongo.NewSingleResultFromDocument(bson.M{}, err, nil)
 		}
+
 		result := c.collection.FindOneAndUpdate(ctx, guarded, stamped, opts...)
 		if !errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return result
 		}
 	}
+
 	return mongo.NewSingleResultFromDocument(bson.M{}, ErrUpdateConflict, nil)
 }
-func (c *scopedCollection) InsertOne(ctx context.Context, document any, opts ...options.Lister[options.InsertOneOptions]) (*mongo.InsertOneResult, error) {
+
+func (c *scopedCollection) InsertOne(
+	ctx context.Context,
+	document any,
+	opts ...options.Lister[options.InsertOneOptions],
+) (*mongo.InsertOneResult, error) {
 	id, err := identity.OrganisationID(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	encoded, err := bson.Marshal(document)
 	if err != nil {
 		return nil, err
 	}
+
 	var doc bson.M
 	if err := bson.Unmarshal(encoded, &doc); err != nil {
 		return nil, err
@@ -152,6 +189,7 @@ func (c *scopedCollection) InsertOne(ctx context.Context, document any, opts ...
 	if existing, ok := doc["organisation_id"].(bson.ObjectID); ok && !existing.IsZero() && existing != id {
 		return nil, fmt.Errorf("cannot insert another organisation's document")
 	}
+
 	doc["organisation_id"] = id
 	principal, _ := identity.FromContext(ctx)
 	doc["created_by"] = principal.AccountID
@@ -163,15 +201,21 @@ func (c *scopedCollection) InsertOne(ctx context.Context, document any, opts ...
 	if err := bson.Unmarshal(encoded, document); err != nil {
 		return nil, err
 	}
+
 	return c.collection.InsertOne(ctx, doc, opts...)
 }
 
 // Scope the source collection and every lookup, even after projections discard organisation_id.
-func (c *scopedCollection) Aggregate(ctx context.Context, pipeline mongo.Pipeline, opts ...options.Lister[options.AggregateOptions]) (*mongo.Cursor, error) {
+func (c *scopedCollection) Aggregate(
+	ctx context.Context,
+	pipeline mongo.Pipeline,
+	opts ...options.Lister[options.AggregateOptions],
+) (*mongo.Cursor, error) {
 	id, err := identity.OrganisationID(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	match := bson.D{{Key: "$match", Value: bson.M{"organisation_id": id}}}
 	scoped := mongo.Pipeline{match}
 	for _, stage := range pipeline {
@@ -201,8 +245,10 @@ func (c *scopedCollection) Aggregate(ctx context.Context, pipeline mongo.Pipelin
 				return nil, fmt.Errorf("aggregation stage %s needs explicit tenant scoping", element.Key)
 			}
 		}
+
 		scoped = append(scoped, copyStage)
 	}
+
 	return c.collection.Aggregate(ctx, scoped, opts...)
 }
 
@@ -211,13 +257,16 @@ type scopedIndexView struct{ collection *mongo.Collection }
 func (c *scopedCollection) Indexes() scopedIndexView {
 	return scopedIndexView{collection: c.collection}
 }
+
 func (v scopedIndexView) CreateOne(ctx context.Context, index mongo.IndexModel) (string, error) {
 	names, err := v.CreateMany(ctx, []mongo.IndexModel{index})
 	if err != nil {
 		return "", err
 	}
+
 	return names[0], nil
 }
+
 func (v scopedIndexView) CreateMany(ctx context.Context, indexes []mongo.IndexModel) ([]string, error) {
 	scoped := make([]mongo.IndexModel, len(indexes))
 	for i, index := range indexes {
@@ -228,8 +277,10 @@ func (v scopedIndexView) CreateMany(ctx context.Context, indexes []mongo.IndexMo
 		if len(keys) == 0 || keys[0].Key != "organisation_id" {
 			index.Keys = append(bson.D{{Key: "organisation_id", Value: 1}}, keys...)
 		}
+
 		scoped[i] = index
 	}
+
 	names, err := v.collection.Indexes().CreateMany(ctx, scoped)
 	if err != nil {
 		return nil, err
@@ -239,6 +290,7 @@ func (v scopedIndexView) CreateMany(ctx context.Context, indexes []mongo.IndexMo
 	if err != nil {
 		return nil, err
 	}
+
 	defer cursor.Close(ctx)
 	var legacy []string
 	for cursor.Next(ctx) {
@@ -257,10 +309,12 @@ func (v scopedIndexView) CreateMany(ctx context.Context, indexes []mongo.IndexMo
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
+
 	for _, name := range legacy {
 		if err := v.collection.Indexes().DropOne(ctx, name); err != nil {
 			return nil, err
 		}
 	}
+
 	return names, nil
 }

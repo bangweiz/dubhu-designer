@@ -23,17 +23,27 @@ func (r *InstructionRepository) ListUsages(ctx context.Context, id bson.ObjectID
 			"_id": 0, "concierge_id": "$_id", "concierge_name": "$name",
 			"agent_id": "$agents._id", "agent_name": "$agents.name",
 		}}},
-		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+		bson.D{{
+			Key: "$sort",
+			Value: bson.D{
+				{Key: "concierge_name", Value: 1},
+				{Key: "concierge_id", Value: 1},
+				{Key: "agent_name", Value: 1},
+				{Key: "agent_id", Value: 1},
+			},
+		}},
 	}
 	cursor, err := r.collection.sibling(collectionConcierges).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate instruction usages: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 	usages := []InstructionUsageResult{}
 	if err := cursor.All(ctx, &usages); err != nil {
 		return nil, fmt.Errorf("decode instruction usages: %w", err)
 	}
+
 	return usages, nil
 }
 
@@ -60,6 +70,7 @@ func (r *InstructionRepository) InitIndexes(ctx context.Context) error {
 	if _, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{indexModel, {Keys: bson.D{{Key: "tools", Value: 1}}}}); err != nil {
 		return fmt.Errorf("failed to create index on instructions collection: %w", err)
 	}
+
 	return nil
 }
 
@@ -70,8 +81,10 @@ func (r *InstructionRepository) Create(ctx context.Context, inst *models.Instruc
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrInstructionNameExists
 		}
+
 		return nil, fmt.Errorf("failed to insert instruction: %w", err)
 	}
+
 	return inst, nil
 }
 
@@ -83,8 +96,10 @@ func (r *InstructionRepository) GetByID(ctx context.Context, id bson.ObjectID) (
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to find instruction: %w", err)
 	}
+
 	return &inst, nil
 }
 
@@ -108,6 +123,7 @@ func (r *InstructionRepository) GetByIDWithReferences(ctx context.Context, id bs
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate instruction with tools: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 
 	var populated models.PopulatedInstruction
@@ -115,6 +131,7 @@ func (r *InstructionRepository) GetByIDWithReferences(ctx context.Context, id bs
 		if err := cursor.Decode(&populated); err != nil {
 			return nil, fmt.Errorf("failed to decode populated instruction: %w", err)
 		}
+
 		return &populated, nil
 	}
 	if err := cursor.Err(); err != nil {
@@ -130,6 +147,7 @@ func (r *InstructionRepository) List(ctx context.Context) ([]models.Instruction,
 	if err != nil {
 		return nil, fmt.Errorf("failed to query instructions: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 
 	var list []models.Instruction
@@ -140,6 +158,7 @@ func (r *InstructionRepository) List(ctx context.Context) ([]models.Instruction,
 	if list == nil {
 		list = []models.Instruction{}
 	}
+
 	return list, nil
 }
 
@@ -148,10 +167,12 @@ func (r *InstructionRepository) FindByIDs(ctx context.Context, ids []bson.Object
 	if len(ids) == 0 {
 		return []models.Instruction{}, nil
 	}
+
 	cursor, err := r.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to query instructions by IDs: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 	var instructions []models.Instruction
 	if err := cursor.All(ctx, &instructions); err != nil {
@@ -160,12 +181,18 @@ func (r *InstructionRepository) FindByIDs(ctx context.Context, ids []bson.Object
 	if instructions == nil {
 		instructions = []models.Instruction{}
 	}
+
 	return instructions, nil
 }
 
 // Update updates an existing Instruction document using optimistic concurrency control.
 // Matches by _id and updated_at. On success, advances updated_at and returns the updated document.
-func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, updateDoc bson.M) (*models.Instruction, error) {
+func (r *InstructionRepository) Update(
+	ctx context.Context,
+	id bson.ObjectID,
+	expectedUpdatedAt time.Time,
+	updateDoc bson.M,
+) (*models.Instruction, error) {
 	filter := bson.M{
 		"_id":        id,
 		"updated_at": expectedUpdatedAt,
@@ -186,6 +213,7 @@ func (r *InstructionRepository) Update(ctx context.Context, id bson.ObjectID, ex
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrInstructionNameExists
 		}
+
 		return nil, fmt.Errorf("failed to update instruction: %w", err)
 	}
 

@@ -80,5 +80,6 @@ func ToAgentSummaryResponseDTOList(agents []models.Agent) []dto.AgentSummaryResp
 	for i := range agents {
 		res = append(res, ToAgentSummaryResponseDTO(&agents[i]))
 	}
+
 	return res
 }

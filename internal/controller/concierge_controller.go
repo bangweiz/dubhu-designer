@@ -43,21 +43,25 @@ func (c *ConciergeController) UpdateConcierge(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
 		return
 	}
+
 	var req dto.UpdateConciergeDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
+
 	req.Trim()
 	if errs := validator.ValidateCreateConcierge(&req); len(errs) > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
+
 	resp, err := c.conciergeService.UpdateConcierge(ctx.Request.Context(), ctx.Param("conciergeId"), ifMatch, req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
@@ -71,6 +75,7 @@ func (c *ConciergeController) GetConciergeVersion(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": saved})
 }
 
@@ -81,11 +86,13 @@ func (c *ConciergeController) SaveConcierge(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
 	}
+
 	saved, err := c.conciergeService.SaveConcierge(ctx.Request.Context(), conciergeID)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"data": saved})
 }
 
@@ -167,15 +174,24 @@ func (c *ConciergeController) SetConciergeVersionDeployment(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
 	}
+
 	var req dto.ConciergeVersionDeploymentDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
-	response, err := c.conciergeService.SetConciergeVersionDeployment(ctx.Request.Context(), ctx.Param("conciergeId"), versionID, strings.TrimSpace(req.EnvironmentID), deploy)
+
+	response, err := c.conciergeService.SetConciergeVersionDeployment(
+		ctx.Request.Context(),
+		ctx.Param("conciergeId"),
+		versionID,
+		strings.TrimSpace(req.EnvironmentID),
+		deploy,
+	)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": response})
 }

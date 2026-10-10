@@ -26,14 +26,17 @@ func main() {
 	if err := authRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize auth indexes: %v", err))
 	}
+
 	variableRepo := repository.NewVariableRepository(database)
 	if err := variableRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize variable indexes: %v", err))
 	}
+
 	environmentRepo := repository.NewEnvironmentRepository(database)
 	if err := environmentRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize environment indexes: %v", err))
 	}
+
 	toolRepo := repository.NewToolRepository(database)
 	if err := toolRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize tool indexes: %v", err))
@@ -53,6 +56,7 @@ func main() {
 	if err := agentRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize agent indexes: %v", err))
 	}
+
 	savedConciergeRepo := repository.NewSavedConciergeVersionRepository(database)
 	if err := savedConciergeRepo.InitIndexes(ctx); err != nil {
 		panic(fmt.Sprintf("Failed to initialize saved concierge indexes: %v", err))
@@ -63,6 +67,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize authentication: %v", err))
 	}
+
 	variableService := service.NewVariableService(variableRepo)
 	environmentService := service.NewEnvironmentService(environmentRepo)
 	toolService := service.NewToolService(toolRepo)
@@ -84,6 +89,7 @@ func main() {
 	if err := router.SetTrustedProxies(nil); err != nil {
 		panic(err)
 	}
+
 	router.Use(func(ctx *gin.Context) {
 		ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, 1<<20)
 		ctx.Next()

@@ -7,5 +7,6 @@ func auditID(id bson.ObjectID) string {
 	if id.IsZero() {
 		return ""
 	}
+
 	return id.Hex()
 }

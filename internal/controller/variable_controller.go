@@ -30,16 +30,19 @@ func (c *VariableController) CreateVariable(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
+
 	req.Trim()
 	if errs := validator.ValidateCreateVariable(&req); len(errs) > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
+
 	resp, err := c.variableService.CreateVariable(ctx.Request.Context(), req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{"data": resp})
 }
@@ -50,6 +53,7 @@ func (c *VariableController) ListVariables(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
 
@@ -59,6 +63,7 @@ func (c *VariableController) GetVariableByID(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
@@ -69,21 +74,25 @@ func (c *VariableController) UpdateVariable(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
 		return
 	}
+
 	var req dto.UpdateVariableDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
+
 	req.Trim()
 	if errs := validator.ValidateUpdateVariable(&req); len(errs) > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
+
 	resp, err := c.variableService.UpdateVariable(ctx.Request.Context(), ctx.Param("variableId"), ifMatch, req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }

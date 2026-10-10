@@ -15,38 +15,70 @@ const collectionTools = "tools"
 
 // ListReferencingInstructions includes instructions even when no concierge agent assigns them.
 func (r *ToolRepository) ListReferencingInstructions(ctx context.Context, id bson.ObjectID) ([]models.Instruction, error) {
-	cursor, err := r.collection.sibling(collectionInstructions).Find(ctx, bson.M{"tools": id}, options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}))
+	cursor, err := r.collection.sibling(collectionInstructions).Find(
+		ctx,
+		bson.M{"tools": id},
+		options.Find().SetProjection(bson.M{"_id": 1, "name": 1}).SetSort(bson.D{{Key: "name", Value: 1}, {Key: "_id", Value: 1}}),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("find tool instruction usages: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 	instructions := []models.Instruction{}
 	if err := cursor.All(ctx, &instructions); err != nil {
 		return nil, fmt.Errorf("decode tool instruction usages: %w", err)
 	}
+
 	return instructions, nil
 }
 
 // ListAgentUsages matches direct assignments and references through current instructions.
 // Matching each embedded agent once naturally deduplicates multiple paths to the same tool.
-func (r *ToolRepository) ListAgentUsages(ctx context.Context, id bson.ObjectID, instructionIDs []bson.ObjectID) ([]InstructionUsageResult, error) {
-	filter := bson.M{"$or": bson.A{bson.M{"agents.tools": id}, bson.M{"agents.instructions": bson.M{"$in": instructionIDs}}}}
+func (r *ToolRepository) ListAgentUsages(
+	ctx context.Context,
+	id bson.ObjectID,
+	instructionIDs []bson.ObjectID,
+) ([]InstructionUsageResult, error) {
+	filter := bson.M{"$or": bson.A{
+		bson.M{"agents.tools": id},
+		bson.M{"agents.instructions": bson.M{"$in": instructionIDs}},
+	}}
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: filter}},
 		bson.D{{Key: "$unwind", Value: "$agents"}},
 		bson.D{{Key: "$match", Value: filter}},
-		bson.D{{Key: "$project", Value: bson.M{"_id": 0, "concierge_id": "$_id", "concierge_name": "$name", "agent_id": "$agents._id", "agent_name": "$agents.name"}}},
-		bson.D{{Key: "$sort", Value: bson.D{{Key: "concierge_name", Value: 1}, {Key: "concierge_id", Value: 1}, {Key: "agent_name", Value: 1}, {Key: "agent_id", Value: 1}}}},
+		bson.D{{
+			Key: "$project",
+			Value: bson.M{
+				"_id":            0,
+				"concierge_id":   "$_id",
+				"concierge_name": "$name",
+				"agent_id":       "$agents._id",
+				"agent_name":     "$agents.name",
+			},
+		}},
+		bson.D{{
+			Key: "$sort",
+			Value: bson.D{
+				{Key: "concierge_name", Value: 1},
+				{Key: "concierge_id", Value: 1},
+				{Key: "agent_name", Value: 1},
+				{Key: "agent_id", Value: 1},
+			},
+		}},
 	}
 	cursor, err := r.collection.sibling(collectionConcierges).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate tool agent usages: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 	usages := []InstructionUsageResult{}
 	if err := cursor.All(ctx, &usages); err != nil {
 		return nil, fmt.Errorf("decode tool agent usages: %w", err)
 	}
+
 	return usages, nil
 }
 
@@ -71,6 +103,7 @@ func (r *ToolRepository) InitIndexes(ctx context.Context) error {
 	if _, err := r.collection.Indexes().CreateOne(ctx, indexModel); err != nil {
 		return fmt.Errorf("failed to create unique index on tool name: %w", err)
 	}
+
 	return nil
 }
 
@@ -81,8 +114,10 @@ func (r *ToolRepository) Create(ctx context.Context, tool *models.Tool) (*models
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrToolNameExists
 		}
+
 		return nil, fmt.Errorf("failed to insert tool: %w", err)
 	}
+
 	return tool, nil
 }
 
@@ -94,8 +129,10 @@ func (r *ToolRepository) GetByID(ctx context.Context, id bson.ObjectID) (*models
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to find tool: %w", err)
 	}
+
 	return &tool, nil
 }
 
@@ -105,6 +142,7 @@ func (r *ToolRepository) List(ctx context.Context) ([]models.Tool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tools: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 
 	var tools []models.Tool
@@ -115,13 +153,19 @@ func (r *ToolRepository) List(ctx context.Context) ([]models.Tool, error) {
 	if tools == nil {
 		tools = []models.Tool{}
 	}
+
 	return tools, nil
 }
 
 // Update updates an existing Tool document using optimistic concurrency control.
 // The document must match both id and expectedUpdatedAt. On match, updated_at advances.
 // Returns the updated Tool document after update.
-func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedUpdatedAt time.Time, updateDoc bson.M) (*models.Tool, error) {
+func (r *ToolRepository) Update(
+	ctx context.Context,
+	id bson.ObjectID,
+	expectedUpdatedAt time.Time,
+	updateDoc bson.M,
+) (*models.Tool, error) {
 	filter := bson.M{
 		"_id":        id,
 		"updated_at": expectedUpdatedAt,
@@ -142,6 +186,7 @@ func (r *ToolRepository) Update(ctx context.Context, id bson.ObjectID, expectedU
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, ErrToolNameExists
 		}
+
 		return nil, fmt.Errorf("failed to update tool: %w", err)
 	}
 
@@ -162,6 +207,7 @@ func (r *ToolRepository) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tools by IDs: %w", err)
 	}
+
 	defer cursor.Close(ctx)
 
 	var tools []models.Tool
@@ -172,5 +218,6 @@ func (r *ToolRepository) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]
 	if tools == nil {
 		tools = []models.Tool{}
 	}
+
 	return tools, nil
 }

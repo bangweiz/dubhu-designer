@@ -22,7 +22,12 @@ type AgentService struct {
 }
 
 // NewAgentService creates a new AgentService instance.
-func NewAgentService(agentRepo *repository.AgentRepository, conciergeRepo *repository.ConciergeRepository, instructionRepo *repository.InstructionRepository, toolRepo *repository.ToolRepository) *AgentService {
+func NewAgentService(
+	agentRepo *repository.AgentRepository,
+	conciergeRepo *repository.ConciergeRepository,
+	instructionRepo *repository.InstructionRepository,
+	toolRepo *repository.ToolRepository,
+) *AgentService {
 	return &AgentService{
 		agentRepo:       agentRepo,
 		conciergeRepo:   conciergeRepo,
@@ -50,6 +55,7 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeIDStr string, i
 	if len(concierge.Agents) >= models.MaxAgentsPerConcierge {
 		return nil, ErrAgentLimitReached
 	}
+
 	entity := mapper.ToInitialAgentEntity(conciergeID, input)
 	created, err := s.agentRepo.Create(ctx, conciergeID, entity)
 	if err != nil {
@@ -61,6 +67,7 @@ func (s *AgentService) CreateAgent(ctx context.Context, conciergeIDStr string, i
 		case errors.Is(err, repository.ErrAgentNameExists):
 			return nil, ErrAgentNameExists
 		}
+
 		return nil, err
 	}
 
@@ -91,6 +98,7 @@ func (s *AgentService) GetAgentByID(ctx context.Context, conciergeIDStr string, 
 		if errors.Is(err, repository.ErrAgentNotFound) {
 			return nil, ErrAgentNotFound
 		}
+
 		return nil, err
 	}
 
@@ -117,6 +125,7 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([
 	if agents == nil {
 		agents = []models.Agent{}
 	}
+
 	for i := range agents {
 		agents[i].ConciergeID = conciergeID
 	}
@@ -129,7 +138,13 @@ func (s *AgentService) ListAgents(ctx context.Context, conciergeIDStr string) ([
 // Returns ErrConciergeNotFound if concierge ID is invalid or concierge does not exist.
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
 // Returns ErrAgentNameExists if an agent with the same name already exists in this concierge.
-func (s *AgentService) UpdateAgent(ctx context.Context, conciergeIDStr string, agentIDStr string, ifMatch string, input dto.UpdateAgentDTO) (*dto.AgentResponseDTO, error) {
+func (s *AgentService) UpdateAgent(
+	ctx context.Context,
+	conciergeIDStr string,
+	agentIDStr string,
+	ifMatch string,
+	input dto.UpdateAgentDTO,
+) (*dto.AgentResponseDTO, error) {
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return nil, ErrConciergeNotFound
@@ -169,6 +184,7 @@ func (s *AgentService) UpdateAgent(ctx context.Context, conciergeIDStr string, a
 			if errors.Is(err, repository.ErrAgentNameExists) {
 				return nil, ErrAgentNameExists
 			}
+
 			return nil, err
 		}
 
@@ -176,6 +192,7 @@ func (s *AgentService) UpdateAgent(ctx context.Context, conciergeIDStr string, a
 		if err != nil {
 			return nil, err
 		}
+
 		res := mapper.ToAgentResponseDTO(&populated.Agent, populated.ResolvedInstructions, populated.ResolvedTools)
 		return &res, nil
 	})
@@ -218,6 +235,7 @@ func (s *AgentService) AssignInstruction(ctx context.Context, conciergeIDStr str
 		if errors.Is(err, repository.ErrAgentNotFound) {
 			return ErrAgentNotFound
 		}
+
 		return err
 	}
 
@@ -228,7 +246,12 @@ func (s *AgentService) AssignInstruction(ctx context.Context, conciergeIDStr str
 // Returns ErrConciergeNotFound if concierge ID is invalid or concierge does not exist.
 // Returns ErrAgentNotFound if agent ID is invalid or agent does not exist in the concierge.
 // Returns ErrInstructionNotFound if instruction ID is invalid.
-func (s *AgentService) UnassignInstruction(ctx context.Context, conciergeIDStr string, agentIDStr string, instructionIDStr string) error {
+func (s *AgentService) UnassignInstruction(
+	ctx context.Context,
+	conciergeIDStr string,
+	agentIDStr string,
+	instructionIDStr string,
+) error {
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return ErrConciergeNotFound
@@ -252,6 +275,7 @@ func (s *AgentService) UnassignInstruction(ctx context.Context, conciergeIDStr s
 		if errors.Is(err, repository.ErrAgentNotFound) {
 			return ErrAgentNotFound
 		}
+
 		return err
 	}
 
@@ -282,22 +306,29 @@ func (s *AgentService) UnassignTool(ctx context.Context, conciergeIDStr, agentID
 	if err != nil {
 		return err
 	}
+
 	return translateAgentReferenceError(s.agentRepo.UnassignTool(ctx, conciergeID, agentID, toolID))
 }
 
-func parseAgentReferenceIDs(conciergeIDStr, agentIDStr, referenceIDStr string, invalidReferenceErr error) (bson.ObjectID, bson.ObjectID, bson.ObjectID, error) {
+func parseAgentReferenceIDs(
+	conciergeIDStr, agentIDStr, referenceIDStr string,
+	invalidReferenceErr error,
+) (bson.ObjectID, bson.ObjectID, bson.ObjectID, error) {
 	conciergeID, err := bson.ObjectIDFromHex(conciergeIDStr)
 	if err != nil {
 		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, ErrConciergeNotFound
 	}
+
 	agentID, err := bson.ObjectIDFromHex(agentIDStr)
 	if err != nil {
 		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, ErrAgentNotFound
 	}
+
 	referenceID, err := bson.ObjectIDFromHex(referenceIDStr)
 	if err != nil {
 		return bson.NilObjectID, bson.NilObjectID, bson.NilObjectID, invalidReferenceErr
 	}
+
 	return conciergeID, agentID, referenceID, nil
 }
 

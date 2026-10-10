@@ -28,6 +28,7 @@ func validateToolInputs(inputs []dto.ToolInputDTO) ValidationErrors {
 	for i, in := range inputs {
 		errs = append(errs, validateToolInput(fmt.Sprintf("inputs[%d]", i), in)...)
 	}
+
 	return errs
 }
 
@@ -52,6 +53,7 @@ func validateToolOutputs(outputs []dto.ToolOutputDTO) ValidationErrors {
 	for i, out := range outputs {
 		errs = append(errs, validateToolOutput(fmt.Sprintf("outputs[%d]", i), out)...)
 	}
+
 	return errs
 }
 
@@ -73,6 +75,7 @@ func ValidateCreateTool(req *dto.CreateToolDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }
 
@@ -94,6 +97,7 @@ func ValidateUpdateTool(req *dto.UpdateToolDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }
 
@@ -104,7 +108,12 @@ func validateToolName(name string) *FieldError {
 		return err
 	}
 	if !toolNamePattern.MatchString(name) {
-		return &FieldError{Field: "name", Reason: "must contain only English letters, digits, and underscores, and cannot start with a digit", Value: name}
+		return &FieldError{
+			Field:  "name",
+			Reason: "must contain only English letters, digits, and underscores, and cannot start with a digit",
+			Value:  name,
+		}
 	}
+
 	return nil
 }

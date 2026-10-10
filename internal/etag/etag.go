@@ -17,9 +17,11 @@ func Parse(value string) (time.Time, error) {
 	if len(value) < 3 || value[0] != '"' || value[len(value)-1] != '"' {
 		return time.Time{}, ErrInvalid
 	}
+
 	updatedAt, err := time.Parse(time.RFC3339Nano, value[1:len(value)-1])
 	if err != nil || updatedAt.IsZero() || !updatedAt.Equal(updatedAt.Truncate(time.Millisecond)) {
 		return time.Time{}, ErrInvalid
 	}
+
 	return updatedAt.UTC(), nil
 }

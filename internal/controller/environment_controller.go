@@ -30,16 +30,19 @@ func (c *EnvironmentController) CreateEnvironment(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
+
 	req.Trim()
 	if errs := validator.ValidateCreateEnvironment(&req); len(errs) > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
+
 	resp, err := c.environmentService.CreateEnvironment(ctx.Request.Context(), req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusCreated, gin.H{"data": resp})
 }
@@ -50,6 +53,7 @@ func (c *EnvironmentController) ListEnvironments(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
 
@@ -59,6 +63,7 @@ func (c *EnvironmentController) GetEnvironmentByID(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
@@ -69,21 +74,25 @@ func (c *EnvironmentController) UpdateEnvironment(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"error": "If-Match header is required"})
 		return
 	}
+
 	var req dto.UpdateEnvironmentDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
+
 	req.Trim()
 	if errs := validator.ValidateUpdateEnvironment(&req); len(errs) > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
+
 	resp, err := c.environmentService.UpdateEnvironment(ctx.Request.Context(), ctx.Param("environmentId"), ifMatch, req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.Header("ETag", etag.Format(resp.UpdatedAt))
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }

@@ -33,6 +33,7 @@ func ToToolInputs(inputs []dto.ToolInputDTO) []models.ToolInput {
 			Required:    in.Required,
 		})
 	}
+
 	return res
 }
 
@@ -45,6 +46,7 @@ func ToToolOutputs(outputs []dto.ToolOutputDTO) []models.ToolOutput {
 			Description: out.Description,
 		})
 	}
+
 	return res
 }
 
@@ -86,5 +88,6 @@ func ToToolResponseDTOList(tools []models.Tool) []dto.ToolResponseDTO {
 	for i := range tools {
 		res = append(res, ToToolResponseDTO(&tools[i]))
 	}
+
 	return res
 }

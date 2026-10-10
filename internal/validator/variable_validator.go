@@ -10,6 +10,7 @@ func ValidateCreateVariable(req *dto.CreateVariableDTO) ValidationErrors {
 	if !models.VariableType(req.Type).IsValid() {
 		errs = append(errs, FieldError{Field: "type", Reason: "must be string, number, or bool", Value: req.Type})
 	}
+
 	return errs
 }
 
@@ -25,5 +26,6 @@ func validateVariableMetadata(name, description string) ValidationErrors {
 	if err := validateDescription("description", description); err != nil {
 		errs = append(errs, *err)
 	}
+
 	return errs
 }

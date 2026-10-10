@@ -35,11 +35,13 @@ func (d *UpdateVariableDTO) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err
 	}
+
 	for field := range fields {
 		if strings.EqualFold(field, "type") {
 			return fmt.Errorf("variable type is immutable; omit type from update requests")
 		}
 	}
+
 	type payload UpdateVariableDTO
 	return json.Unmarshal(data, (*payload)(d))
 }

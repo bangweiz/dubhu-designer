@@ -19,5 +19,6 @@ func ValidateCreateConcierge(req *dto.CreateConciergeDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }

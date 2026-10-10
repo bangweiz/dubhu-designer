@@ -27,6 +27,7 @@ func ValidateCreateAgent(req *dto.CreateAgentDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }
 
@@ -53,5 +54,6 @@ func ValidateUpdateAgent(req *dto.UpdateAgentDTO) ValidationErrors {
 	if len(errs) == 0 {
 		return nil
 	}
+
 	return errs
 }

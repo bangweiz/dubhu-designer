@@ -30,6 +30,7 @@ func (ve ValidationErrors) Error() string {
 	for _, fe := range ve {
 		msgs = append(msgs, fmt.Sprintf("%s: %s (value: %v)", fe.Field, fe.Reason, fe.Value))
 	}
+
 	return strings.Join(msgs, "; ")
 }
 
@@ -49,6 +50,7 @@ func validateName(field, value string) *FieldError {
 			Value:  value,
 		}
 	}
+
 	return nil
 }
 
@@ -68,6 +70,7 @@ func validateDescription(field, value string) *FieldError {
 			Value:  value,
 		}
 	}
+
 	return nil
 }
 
@@ -87,6 +90,7 @@ func validateGoal(field, value string) *FieldError {
 			Value:  value,
 		}
 	}
+
 	return nil
 }
 
@@ -106,6 +110,7 @@ func validateContent(field, value string) *FieldError {
 			Value:  value,
 		}
 	}
+
 	return nil
 }
 
@@ -126,5 +131,6 @@ func validateModel(field, value string) *FieldError {
 			Value:  value,
 		}
 	}
+
 	return nil
 }

@@ -41,6 +41,7 @@ func (c *InstructionController) ListInstructionUsages(ctx *gin.Context) {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": usages})
 }
 

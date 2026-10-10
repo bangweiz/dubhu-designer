@@ -19,5 +19,6 @@ func ExtractVariableIDs(content string) []string {
 			seen[id] = true
 		}
 	}
+
 	return ids
 }

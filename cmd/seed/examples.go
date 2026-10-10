@@ -36,7 +36,11 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 	if org == nil {
 		response, err := auth.CreateOrganisation(ctx, dto.CreateOrganisationDTO{
 			Name: "Dubhu Variable Demo", Description: "Local examples of typed variables and instruction references.",
-			RootAccount: dto.RootAccountDTO{Name: "Demo administrator", Email: "root@dubhu.test", Password: "DubhuTest123!2026"},
+			RootAccount: dto.RootAccountDTO{
+				Name:     "Demo administrator",
+				Email:    "root@dubhu.test",
+				Password: "DubhuTest123!2026",
+			},
 		})
 		must(err)
 		orgID, err = bson.ObjectIDFromHex(response.Organisation.ID)
@@ -45,11 +49,13 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 		must(err)
 		createdOrganisation = true
 	}
+
 	root, err := authRepo.GetAccount(ctx, org.ID, org.RootAccountID)
 	must(err)
 	if root == nil || root.Role != models.RoleRoot {
 		panic("Demo organisation has no valid root account")
 	}
+
 	ctx = identity.WithPrincipal(ctx, identity.Principal{OrganisationID: org.ID, AccountID: root.ID, Role: string(root.Role)})
 	variableRepo := repository.NewVariableRepository(database)
 	instructionRepo := repository.NewInstructionRepository(database)
@@ -62,7 +68,14 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 	must(agentRepo.InitIndexes(ctx))
 	variableService := service.NewVariableService(variableRepo)
 	instructionService := service.NewInstructionService(instructionRepo, toolRepo, variableRepo)
-	conciergeService := service.NewConciergeService(conciergeRepo, instructionRepo, toolRepo, variableRepo, repository.NewSavedConciergeVersionRepository(database), repository.NewEnvironmentRepository(database))
+	conciergeService := service.NewConciergeService(
+		conciergeRepo,
+		instructionRepo,
+		toolRepo,
+		variableRepo,
+		repository.NewSavedConciergeVersionRepository(database),
+		repository.NewEnvironmentRepository(database),
+	)
 	agentService := service.NewAgentService(agentRepo, conciergeRepo, instructionRepo, toolRepo)
 	existingVariables, err := variableRepo.List(ctx)
 	must(err)
@@ -70,19 +83,40 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 	for _, variable := range existingVariables {
 		variableIDs[variable.Name] = variable.ID.Hex()
 	}
+
 	for _, input := range []dto.CreateVariableDTO{
-		{Name: "demo_property_name", Description: "The property name used to greet guests.", Type: "string"},
-		{Name: "demo_nightly_rate", Description: "The nightly room rate as a numeric amount.", Type: "number"},
-		{Name: "demo_breakfast_included", Description: "Whether breakfast is included with the stay.", Type: "bool"},
+		{
+			Name:        "demo_property_name",
+			Description: "The property name used to greet guests.",
+			Type:        "string",
+		},
+		{
+			Name:        "demo_nightly_rate",
+			Description: "The nightly room rate as a numeric amount.",
+			Type:        "number",
+		},
+		{
+			Name:        "demo_breakfast_included",
+			Description: "Whether breakfast is included with the stay.",
+			Type:        "bool",
+		},
 	} {
 		if variableIDs[input.Name] == "" {
 			variable, err := variableService.CreateVariable(ctx, input)
 			must(err)
 			variableIDs[input.Name] = variable.ID
 		}
+
 		fmt.Printf("Variable %s (%s): %s\n", input.Name, input.Type, variableIDs[input.Name])
 	}
-	content := fmt.Sprintf("Welcome guests to {{var:%s}}. Explain the nightly rate using {{var:%s}}. Use {{var:%s}} to determine whether breakfast is included. Mention {{var:%s}} again when closing the conversation.", variableIDs["demo_property_name"], variableIDs["demo_nightly_rate"], variableIDs["demo_breakfast_included"], variableIDs["demo_property_name"])
+
+	content := fmt.Sprintf(
+		"Welcome guests to {{var:%s}}. Explain the nightly rate using {{var:%s}}. Use {{var:%s}} to determine whether breakfast is included. Mention {{var:%s}} again when closing the conversation.",
+		variableIDs["demo_property_name"],
+		variableIDs["demo_nightly_rate"],
+		variableIDs["demo_breakfast_included"],
+		variableIDs["demo_property_name"],
+	)
 	instructions, err := instructionRepo.List(ctx)
 	must(err)
 	instructionID := ""
@@ -96,6 +130,7 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 		must(err)
 		instructionID = instruction.ID
 	}
+
 	concierges, err := conciergeRepo.List(ctx)
 	must(err)
 	conciergeID := ""
@@ -105,10 +140,17 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 		}
 	}
 	if conciergeID == "" {
-		concierge, err := conciergeService.CreateConcierge(ctx, dto.CreateConciergeDTO{Name: "Variable reference demo", Description: "A guest assistant demonstrating string, number, and bool variable references."})
+		concierge, err := conciergeService.CreateConcierge(
+			ctx,
+			dto.CreateConciergeDTO{
+				Name:        "Variable reference demo",
+				Description: "A guest assistant demonstrating string, number, and bool variable references.",
+			},
+		)
 		must(err)
 		conciergeID = concierge.ID
 	}
+
 	agents, err := agentService.ListAgents(ctx, conciergeID)
 	must(err)
 	agentID := ""
@@ -118,10 +160,20 @@ func seedExamples(ctx context.Context, database *mongo.Database) {
 		}
 	}
 	if agentID == "" {
-		agent, err := agentService.CreateAgent(ctx, conciergeID, dto.CreateAgentDTO{Name: "Typed variable assistant", Description: "Uses typed guest-stay variables.", Goal: "Explain the property, nightly rate, and breakfast availability clearly.", Model: string(models.ModelGemini35Flash)})
+		agent, err := agentService.CreateAgent(
+			ctx,
+			conciergeID,
+			dto.CreateAgentDTO{
+				Name:        "Typed variable assistant",
+				Description: "Uses typed guest-stay variables.",
+				Goal:        "Explain the property, nightly rate, and breakfast availability clearly.",
+				Model:       string(models.ModelGemini35Flash),
+			},
+		)
 		must(err)
 		agentID = agent.ID
 	}
+
 	must(agentService.AssignInstruction(ctx, conciergeID, agentID, instructionID))
 	instruction, err := instructionService.GetInstructionByID(ctx, instructionID)
 	must(err)

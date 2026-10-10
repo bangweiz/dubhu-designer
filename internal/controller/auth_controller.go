@@ -31,6 +31,7 @@ func (c *AuthController) RegisterRoutes(rg *gin.RouterGroup) {
 	authenticated.POST("/auth/logout", c.Logout)
 	authenticated.POST("/accounts", c.CreateAccount)
 }
+
 func (c *AuthController) CreateOrganisation(ctx *gin.Context) {
 	ctx.Header("Cache-Control", "no-store")
 	var req dto.CreateOrganisationDTO
@@ -38,27 +39,33 @@ func (c *AuthController) CreateOrganisation(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
 	req.Trim()
 	resp, err := c.authService.CreateOrganisation(ctx.Request.Context(), req)
 	if err != nil {
 		writeServiceError(ctx, err, errorContext{nameValue: req.Name})
 		return
 	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"data": resp})
 }
+
 func (c *AuthController) CreateAccount(ctx *gin.Context) {
 	var req dto.CreateAccountDTO
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
 	resp, err := c.authService.CreateAccount(ctx.Request.Context(), req)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"data": resp})
 }
+
 func (c *AuthController) Login(ctx *gin.Context) {
 	ctx.Header("Cache-Control", "no-store")
 	var req dto.LoginDTO
@@ -66,18 +73,22 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
 	resp, err := c.authService.Login(ctx.Request.Context(), ctx.Param("organisationId"), req)
 	if err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"data": resp})
 }
+
 func bearerToken(ctx *gin.Context) string {
 	parts := strings.Fields(ctx.GetHeader("Authorization"))
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 		return ""
 	}
+
 	return parts[1]
 }
 
@@ -90,6 +101,7 @@ func (c *AuthController) RequirePermissions() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
+
 		ctx.Header("Cache-Control", "no-store")
 		account, err := c.authService.Authenticate(ctx.Request.Context(), bearerToken(ctx))
 		if err != nil {
@@ -97,20 +109,27 @@ func (c *AuthController) RequirePermissions() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+
 		orgID, err := bson.ObjectIDFromHex(ctx.Param("organisationId"))
 		if err != nil || orgID != account.OrganisationID {
 			writeServiceError(ctx, service.ErrForbidden)
 			ctx.Abort()
 			return
 		}
+
 		ctx.Set("authenticatedAccount", account)
-		principal := identity.Principal{OrganisationID: account.OrganisationID, AccountID: account.ID, Role: string(account.Role)}
+		principal := identity.Principal{
+			OrganisationID: account.OrganisationID,
+			AccountID:      account.ID,
+			Role:           string(account.Role),
+		}
 		ctx.Request = ctx.Request.WithContext(identity.WithPrincipal(ctx.Request.Context(), principal))
 		if !permitted(ctx.Request.Method, path, account.Role) {
 			writeServiceError(ctx, service.ErrForbidden)
 			ctx.Abort()
 			return
 		}
+
 		ctx.Next()
 	}
 }
@@ -119,10 +138,12 @@ func permitted(method, path string, role models.AccountRole) bool {
 	if role != models.RoleRoot && role != models.RoleAdmin && role != models.RoleUser {
 		return false
 	}
+
 	const prefix = "/api/v1/organisations/:organisationId/"
 	if !strings.HasPrefix(path, prefix) {
 		return false
 	}
+
 	resource := strings.TrimPrefix(path, prefix)
 	if resource == "accounts" {
 		return method == http.MethodPost && role == models.RoleRoot
@@ -133,6 +154,7 @@ func permitted(method, path string, role models.AccountRole) bool {
 	if resource == "auth/logout" {
 		return method == http.MethodPost
 	}
+
 	switch method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
 		return true
@@ -142,15 +164,18 @@ func permitted(method, path string, role models.AccountRole) bool {
 		return false
 	}
 }
+
 func (c *AuthController) Me(ctx *gin.Context) {
 	account := ctx.MustGet("authenticatedAccount").(*models.Account)
 	ctx.JSON(http.StatusOK, gin.H{"data": mapper.ToAccountResponseDTO(account)})
 }
+
 func (c *AuthController) Logout(ctx *gin.Context) {
 	if err := c.authService.Logout(ctx.Request.Context(), bearerToken(ctx)); err != nil {
 		writeServiceError(ctx, err)
 		return
 	}
+
 	ctx.Status(http.StatusNoContent)
 }
 
@@ -171,6 +196,7 @@ func authRateLimit() gin.HandlerFunc {
 				delete(entries, k)
 			}
 		}
+
 		current := entries[key]
 		if current.reset.IsZero() {
 			current.reset = now.Add(time.Minute)
@@ -181,6 +207,7 @@ func authRateLimit() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too many authentication requests"})
 			return
 		}
+
 		current.count++
 		entries[key] = current
 		mu.Unlock()

@@ -22,6 +22,7 @@ func (v *Variable) EffectiveType() VariableType {
 	if v.Type == "" {
 		return VariableTypeString
 	}
+
 	return v.Type
 }
 

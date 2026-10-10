@@ -21,6 +21,7 @@ type ConciergeVersionDescriptorDTO struct {
 	ConciergeVersionID string `json:"conciergeVersionId"`
 	Version            int    `json:"version"`
 }
+
 type ConciergeResponseDTO struct {
 	Agents            []AgentSummaryResponseDTO       `json:"agents"`
 	NextVersion       int                             `json:"nextVersion"`
@@ -33,6 +34,7 @@ type ConciergeResponseDTO struct {
 	CreatedAt         time.Time                       `json:"createdAt"`
 	UpdatedAt         time.Time                       `json:"updatedAt"`
 }
+
 type ConciergeSummaryResponseDTO = ConciergeResponseDTO
 
 // ConciergeVersionDeploymentDTO identifies the target environment for a version action.

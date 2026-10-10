@@ -10,6 +10,7 @@ func ValidateCreateEnvironment(req *dto.CreateEnvironmentDTO) ValidationErrors {
 	if err := validateDescription("description", req.Description); err != nil {
 		errs = append(errs, *err)
 	}
+
 	return errs
 }
 
